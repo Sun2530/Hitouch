@@ -1,0 +1,51 @@
+{
+  "name": "hitouch",
+  "productName": "Hitouch",
+  "version": "0.1.0",
+  "description": "Hitouch",
+  "main": "main.js",
+  "author": "Sun2530",
+  "license": "MIT",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win portable"
+  },
+  "devDependencies": {
+    "electron": "33.4.11",
+    "electron-builder": "25.1.8"
+  },
+  "build": {
+    "appId": "dev.hitouch.app",
+    "productName": "Hitouch",
+    "copyright": "Copyright © 2026 Sun2530",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "src/**/*",
+      "package.json"
+    ],
+    "asar": true,
+    "compression": "maximum",
+    "afterPack": "build/afterPack.js",
+    "win": {
+      "target": [
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build/icon.ico",
+      "requestedExecutionLevel": "asInvoker",
+      "signAndEditExecutable": false
+    },
+    "portable": {
+      "artifactName": "Hitouch-${version}-portable.exe"
+    }
+  }
+}

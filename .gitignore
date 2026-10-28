@@ -1,0 +1,44 @@
+# 依赖与产物
+node_modules/
+dist/
+build/win-unpacked/
+*.exe
+
+# 测试与截图（本地验证用，不进仓库）
+shots*/
+probe*.js
+c.js
+*.log
+*.tmp
+assets/*.tmp
+
+# 一次性调试脚本
+tools/dbg*.js
+tools/probe.js
+tools/qa.js
+tools/keytest.js
+tools/dstest.js
+tools/livecheck.js
+tools/liveskill.js
+tools/prodcheck.js
+tools/thinktest.js
+tools/modalsize.js
+tools/modalstest.js
+tools/shotall.js
+tools/stateshots.js
+tools/popshots.js
+tools/provshots.js
+tools/dialshots*.js
+tools/dialsync.js
+tools/bootcap.js
+tools/shot.js
+tools/bootrun*.sh
+
+# 图标调试中间产物
+build/px-*.png
+build/preview-*.png
+
+# 系统
+.DS_Store
+Thumbs.db
+desktop.ini
