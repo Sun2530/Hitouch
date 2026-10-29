@@ -45,9 +45,13 @@ for i in 1 2 3 4 5; do
 done
 [ "$ok" = 1 ] || { echo "    写入失败，放弃"; exit 1; }
 
-echo "==> 3/3 生成便携版"
+echo "==> 3/4 生成便携版"
 HITOUCH_SKIP_RCEDIT=1 node $CLI --prepackaged "$OUT/win-unpacked" --win portable >/tmp/ht3.log 2>&1 \
   || { tail -20 /tmp/ht3.log; exit 1; }
+
+echo "==> 4/4 生成安装包"
+HITOUCH_SKIP_RCEDIT=1 node $CLI --prepackaged "$OUT/win-unpacked" --win nsis >/tmp/ht4.log 2>&1 \
+  || { tail -30 /tmp/ht4.log; exit 1; }
 
 ls -lh dist/*.exe
 echo "完成"

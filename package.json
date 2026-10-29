@@ -2,7 +2,7 @@
   "name": "hitouch",
   "productName": "Hitouch",
   "version": "0.1.0",
-  "description": "Hitouch",
+  "description": "A quiet desktop client for DeepSeek",
   "main": "main.js",
   "author": "Sun2530",
   "license": "MIT",
@@ -38,6 +38,12 @@
           "arch": [
             "x64"
           ]
+        },
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
         }
       ],
       "icon": "build/icon.ico",
@@ -46,6 +52,21 @@
     },
     "portable": {
       "artifactName": "Hitouch-${version}-portable.exe"
+    },
+    "nsis": {
+      "artifactName": "Hitouch-${version}-setup.exe",
+      "oneClick": false,
+      "perMachine": false,
+      "allowElevation": true,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Hitouch",
+      "deleteAppDataOnUninstall": false,
+      "installerLanguages": [
+        "zh_CN"
+      ],
+      "language": "2052"
     }
   }
 }
