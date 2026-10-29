@@ -6,6 +6,8 @@
 
 <sub>Windows x64 · 0.1.0 · MIT</sub>
 
+<sub>**中文** · [English](README.en.md)</sub>
+
 <br />
 
 <img src="assets/home.png" alt="Hitouch" width="860" />
