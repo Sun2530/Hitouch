@@ -4,6 +4,8 @@
 
 **一个安静的 DeepSeek 桌面客户端 —— 本地 API Key · 无账号 · 无遥测**
 
+**DeepSeek 桌面客户端 / DeepSeek 客户端下载（Windows x64）** —— 填入自己的 API Key 就能对话：不注册、不登录、不上传聊天记录，对话可以只存在本机；也提供免安装的便携版。
+
 **简体中文** | [English](README.en.md)
 
 <br />

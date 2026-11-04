@@ -4,6 +4,8 @@
 
 A quiet desktop client for talking to DeepSeek.
 
+**DeepSeek desktop client for Windows x64** — bring your own API key and start chatting: no sign-up, no account, no telemetry, chats can stay on your machine. A no-install portable build is included.
+
 <sub>Windows x64 · 0.2.0 · MIT</sub>
 
 <sub>[中文](README.md) · **English**</sub>
