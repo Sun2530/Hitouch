@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Hitouch</title>
 <link rel="stylesheet" href="styles.css" />
+<link rel="stylesheet" href="vendor/highlight-github.min.css" />
 </head>
 <body class="booting">
 
@@ -26,6 +27,12 @@
   <!-- ============ 标题栏 ============ -->
   <header class="bar">
     <div class="bar-l">
+      <button class="hb" id="histBtn" title="对话记录" aria-label="对话记录">
+        <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true">
+          <path d="M2.4 4.6h11.2M2.4 8h11.2M2.4 11.4h7.2" stroke="currentColor"
+                stroke-width="1.15" stroke-linecap="round"/>
+        </svg>
+      </button>
       <span class="bar-mark" aria-hidden="true"></span>
       <span class="bar-name">Hitouch</span>
     </div>
@@ -107,8 +114,9 @@
             <div class="pg-body">
               <p>Hitouch 在你自己的电脑上运行。界面本身不联网，只有你跟模型说话时，那一段内容才会发给你选的供应商。</p>
               <p>不收集使用数据，不需要账号，没有埋点。</p>
-              <p>你的对话只存在于当前窗口，关掉就没了，不写入磁盘。</p>
+              <p>对话只存在于当前窗口，关掉就没了，不写入磁盘。想留下记录，可以在设置里打开「保存对话记录」：开启后对话加密存在本机（%APPDATA%\Hitouch\conversations），只有这台电脑这个账户能解开。</p>
               <p>存在本机的有两样：你选的模型，和你的 API Key。Key 用 Windows 自带的加密接口保存，明文不落盘。</p>
+              <p>联网搜索和本地记忆都默认关闭，由你在设置里手动打开。搜索只把关键词发给 Bing 或百度，不带别的；记忆加密存在本机，随时可看、可清。</p>
               <p class="pg-note">发出去的内容按 DeepSeek 的隐私政策处理，那部分不归 Hitouch 管。</p>
             </div>
           </div>
@@ -127,7 +135,7 @@
               <img class="au-icon" src="icon.png" alt="" />
               <div class="au-name">Sun2530</div>
               <div class="au-role">Hitouch 作者</div>
-              <div class="au-ver">Hitouch 0.1.0</div>
+              <div class="au-ver">Hitouch 0.2.0</div>
             </div>
           </div>
 
@@ -192,6 +200,23 @@
     </div>
   </header>
 
+  <!-- ============ 对话记录（左侧抽屉） ============ -->
+  <aside class="side" id="side" aria-hidden="true">
+    <div class="side-head">
+      <span class="side-title">对话</span>
+      <button class="side-new" id="newChat" title="新对话">
+        <svg width="12" height="12" viewBox="0 0 16 16" aria-hidden="true">
+          <path d="M8 3.4v9.2M3.4 8h9.2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+        </svg>
+      </button>
+    </div>
+    <div class="side-list" id="chatList"></div>
+    <div class="side-foot">
+      <span class="side-store" id="storeState">本地保存</span>
+      <button class="side-link" id="openStore" title="打开会话文件夹">打开</button>
+    </div>
+  </aside>
+
   <!-- ============ 对话 ============ -->
   <main class="thread-wrap">
     <div class="thread" id="thread">
@@ -241,13 +266,50 @@
           <div class="pg pg-main">
             <div class="pop-head">模型</div>
             <div class="pop-list" id="modelList"></div>
+
+            <div class="pop-sep"></div>
+
+            <div class="pop-list">
+              <button class="pi" id="saveToggle" title="关闭后新对话不再写入本机">
+                <span class="pi-name">保存对话记录</span>
+                <span class="pi-tag" id="saveState">关</span>
+              </button>
+              <button class="pi" id="searchToggle" title="打开后，模型会自己搜 Bing/百度，查新闻、价格、天气等实时信息">
+                <span class="pi-name">联网搜索</span>
+                <span class="pi-tag" id="searchState">关</span>
+              </button>
+              <button class="pi" id="memoryToggle" title="打开后，你说「记住…」它才会写进本地记忆，加密存在本机">
+                <span class="pi-name">本地记忆</span>
+                <span class="pi-tag" id="memoryState">关</span>
+              </button>
+              <button class="pi" id="memoryEdit" title="查看、修改或清空它记住的事">
+                <span class="pi-name">它记住的事</span>
+                <span class="pi-tag">查看</span>
+              </button>
+              <button class="pi" id="storeFolder" title="在资源管理器中打开">
+                <span class="pi-name">会话文件夹</span>
+                <span class="pi-tag">打开</span>
+              </button>
+            </div>
+
+            <div class="pop-field" id="ctxField">
+              <span class="pf-label">上下文</span>
+              <input class="pf-range" id="ctxRange" type="range" min="6" max="60" step="2" value="30" />
+              <span class="pf-val" id="ctxVal">30</span>
+            </div>
           </div>
         </div>
       </div>
 
       <!-- 推理：主页拟物滑轨 -->
       <div class="foot" id="foot">
-        <span class="foot-ver">Hitouch 0.1.0</span>
+        <div class="foot-l">
+          <button class="persona" id="personaBtn" title="选择人设">
+            <span class="pt-dot" aria-hidden="true"></span>
+            <span id="personaName">通用助手</span>
+          </button>
+          <span class="foot-ver">v0.2.0</span>
+        </div>
 
         <div class="dial" id="dial" data-on="false">
           <div class="dial-track" id="dialTrack" role="slider"
@@ -328,6 +390,74 @@
   </div>
 </div>
 
+<!-- ============ 人设 ============ -->
+<div class="modal" id="personaModal" aria-hidden="true">
+  <div class="modal-mask" data-pclose></div>
+
+  <div class="modal-card pm-card" role="dialog" aria-modal="true" aria-label="人设">
+    <div class="mc-head">
+      <span class="mc-title">人设</span>
+      <button class="mc-x" data-pclose title="关闭">
+        <svg width="11" height="11" viewBox="0 0 12 12" aria-hidden="true">
+          <path d="M3.3 3.3l5.4 5.4M8.7 3.3L3.3 8.7" stroke="currentColor"
+                stroke-width="1.2" stroke-linecap="round"/>
+        </svg>
+      </button>
+    </div>
+
+    <div class="mc-body">
+      <div class="pop-list" id="personaList"></div>
+
+      <div class="pop-sep"></div>
+
+      <div class="pm-form">
+        <div class="fld-label">新建 / 编辑</div>
+        <input class="key pm-name" id="pmName" placeholder="名字，例如：数学老师" maxlength="24"
+               spellcheck="false" />
+        <textarea class="pm-prompt" id="pmPrompt" rows="4"
+                  placeholder="它该怎么说话？例如：先问我在哪一步卡住，再用最小步骤讲，讲完出一道小题。"
+                  spellcheck="false"></textarea>
+        <div class="fld-row">
+          <button class="btn-ghost" id="pmNew">清空表单</button>
+          <button class="btn-solid" id="pmSave">保存人设</button>
+        </div>
+        <div class="fld-msg" id="pmMsg" aria-live="polite"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 本地记忆 ============ -->
+<div class="modal" id="memoryModal" aria-hidden="true">
+  <div class="modal-mask" data-memclose></div>
+
+  <div class="modal-card pm-card" role="dialog" aria-modal="true" aria-label="本地记忆">
+    <div class="mc-head">
+      <span class="mc-title">它记住的事</span>
+      <button class="mc-x" data-memclose title="关闭">
+        <svg width="11" height="11" viewBox="0 0 12 12" aria-hidden="true">
+          <path d="M3.3 3.3l5.4 5.4M8.7 3.3L3.3 8.7" stroke="currentColor"
+                stroke-width="1.2" stroke-linecap="round"/>
+        </svg>
+      </button>
+    </div>
+
+    <div class="mc-body">
+      <div class="pm-form">
+        <div class="fld-label">一行一条，加密存在本机；清空即彻底删除</div>
+        <textarea class="pm-prompt" id="memText" rows="8"
+                  placeholder="还没有记住任何事。对它说「记住我喜欢…」试试。"
+                  spellcheck="false"></textarea>
+        <div class="fld-row">
+          <button class="btn-ghost" id="memClear">全部清空</button>
+          <button class="btn-solid" id="memSave">保存修改</button>
+        </div>
+        <div class="fld-msg" id="memMsg" aria-live="polite"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ============ 闹钟到点 ============ -->
 <div class="modal" id="alarmModal" aria-hidden="true">
   <div class="modal-mask" id="alarmMask"></div>
@@ -346,7 +476,7 @@
 
     <div class="ct-head">
       <div class="ct-title" id="ctTitle">使用条款与未成年人保护</div>
-      <div class="ct-sub">版本 1 · 2026 年 10 月 28 日</div>
+      <div class="ct-sub">版本 2 · 2026 年 11 月 4 日</div>
     </div>
 
     <div class="ct-body" id="ctBody">
@@ -394,9 +524,9 @@
         <div class="ct-h">六 · 你的数据</div>
         <ul>
           <li><b>存在本机</b>（%APPDATA%\Hitouch）：你选的模型、加密后的 API Key、技能开关、提醒时间、条款同意记录。</li>
-          <li><b>不保存</b>：对话内容。关掉窗口就没了。</li>
+          <li><b>默认不保存</b>：对话内容关掉窗口就没了。在设置里打开「保存对话记录」后，才会加密存到本机（%APPDATA%\Hitouch\conversations），随时可关、可清空。「本地记忆」同样默认关闭，开启后加密存本机，可查看、可清空。</li>
           <li><b>不上传</b>：不收集使用统计，不需要注册账号，没有埋点，没有遥测。</li>
-          <li><b>会发出去的</b>：只有你主动发送的那段文字，发给 DeepSeek，按其隐私政策处理。</li>
+          <li><b>会发出去的</b>：你主动发送的那段文字，发给 DeepSeek，按其隐私政策处理。另外，只有你手动打开「联网搜索」后，模型搜索的关键词才会发给 Bing 或百度；不开就永远不搜。</li>
         </ul>
       </div>
 
@@ -429,6 +559,8 @@
   </div>
 </div>
 
+<script src="vendor/highlight.min.js"></script>
+<script src="md.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

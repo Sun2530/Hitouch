@@ -26,7 +26,14 @@ let CONFIG = {
   skills: { alarm: true, repair: true },
   alarms: [],
   repo: 'https://github.com/Sun2530/Hitouch',
-  consent: { version: 0, at: null, current: 1, agreed: false },
+  consent: { version: 0, at: null, current: 2, agreed: false },
+  personaId: 'general',
+  personas: [
+    { id: 'general', name: '通用助手', desc: '默认，直接、克制', prompt: '' },
+  ],
+  history: { enabled: false, contextLimit: 30, encrypted: false, dir: '' },
+  search: { enabled: false },
+  memory: { enabled: false },
 };
 
 /* 设置页里暂存的选择，保存时才提交 */
@@ -63,6 +70,7 @@ function resizeInput() {
 }
 
 function refreshSend() {
+  if (busy) { sendBtn.disabled = false; return; }
   sendBtn.disabled = input.value.trim().length === 0;
 }
 
@@ -84,29 +92,35 @@ function addMsg(kind, text) {
   return node;
 }
 
-/* ---------------- 极简 markdown ---------------- */
-function escHtml(s) {
-  return s.replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
-}
+/* 每条消息底下的小按钮：复制 / 重新生成 */
+function addMsgActs(node, kind, text) {
+  if (!text || !String(text).trim()) return;
+  const acts = document.createElement('div');
+  acts.className = 'msg-acts';
 
-function renderMd(src) {
-  const codes = [];
-  let s = escHtml(src);
-
-  s = s.replace(/```[a-zA-Z0-9+#-]*\n?([\s\S]*?)```/g, (_m, code) => {
-    codes.push(code.replace(/\n$/, ''));
-    return `\u0000${codes.length - 1}\u0000`;
+  const copy = document.createElement('button');
+  copy.type = 'button';
+  copy.className = 'msg-act';
+  copy.textContent = '复制';
+  copy.addEventListener('click', async () => {
+    const raw = kind === 'bot' ? (node.dataset.raw || text) : text;
+    const ok = await copyText(raw);
+    copy.textContent = ok ? '已复制' : '复制失败';
+    setTimeout(() => { copy.textContent = '复制'; }, 1200);
   });
+  acts.appendChild(copy);
 
-  s = s.replace(/`([^`\n]+)`/g, '<code>$1</code>');
-  s = s.replace(/\*\*([^*\n]+)\*\*/g, '<strong>$1</strong>');
+  if (kind === 'bot') {
+    const re = document.createElement('button');
+    re.type = 'button';
+    re.className = 'msg-act';
+    re.dataset.regen = '1';
+    re.textContent = '重新生成';
+    re.addEventListener('click', () => regenerate());
+    acts.appendChild(re);
+  }
 
-  s = s.split(/\n{2,}/)
-    .map((p) => `<p>${p.replace(/\n/g, '<br>')}</p>`)
-    .join('');
-
-  s = s.replace(/\u0000(\d+)\u0000/g, (_m, i) => `<pre><code>${codes[+i]}</code></pre>`);
-  return s;
+  node.appendChild(acts);
 }
 
 /* ---------------- 模型列表 ---------------- */
@@ -594,6 +608,48 @@ async function runRepairSkill() {
   };
 }
 
+async function runSearchSkill(args) {
+  const query = String(args.query || '').trim();
+  const act = addAct('联网搜索', query || '没给关键词');
+
+  let r;
+  try { r = await api.runSearch(query); }
+  catch (err) { r = { ok: false, error: err.message }; }
+
+  if (!r || !r.ok) {
+    const why = (r && r.error) || '未知原因';
+    act.err('没搜到');
+    act.log(why);
+    return { ok: false, text: `联网搜索失败：${why}。如实告诉用户没搜到，不要编。` };
+  }
+
+  const items = r.results || [];
+  act.ok(`搜到 ${items.length} 条 · ${r.engine || ''}`);
+  act.log(items.slice(0, 3).map((x) => x.title).join(' / '));
+  const text = '［搜索结果：' + r.query + '，来源 ' + r.engine + '］\n' +
+    items.map((x, i) => `${i + 1}. ${x.title}\n   ${x.snippet || '（没有摘要）'}\n   ${x.url}`).join('\n');
+  return { ok: true, text };
+}
+
+async function runRememberSkill(args) {
+  const text = String(args.text || '').trim();
+  const act = addAct('记忆', text || '没给内容');
+
+  let r;
+  try { r = await api.memoryAppend(text); }
+  catch (err) { r = { ok: false, error: err.message }; }
+
+  if (!r || !r.ok) {
+    const why = (r && r.error) || '未知原因';
+    act.err('没记住');
+    act.log(why);
+    return { ok: false, text: `没有记住：${why}` };
+  }
+
+  act.ok('已记住');
+  return { ok: true, text: `已写进本地记忆：「${text}」。用一句话告诉用户你记住了。` };
+}
+
 async function runSkill(raw) {
   let payload;
   try { payload = JSON.parse(raw); }
@@ -610,6 +666,14 @@ async function runSkill(raw) {
   if (name === 'repair') {
     if (!sk.repair) return { ok: false, text: '系统修复技能是关着的，没有执行。' };
     return runRepairSkill();
+  }
+  if (name === 'web_search') {
+    if (!(CONFIG.search || {}).enabled) return { ok: false, text: '联网搜索是关着的，没有执行。' };
+    return runSearchSkill(args);
+  }
+  if (name === 'remember') {
+    if (!(CONFIG.memory || {}).enabled) return { ok: false, text: '本地记忆是关着的，没有执行。' };
+    return runRememberSkill(args);
   }
   return { ok: false, text: `没有叫「${name}」的技能。` };
 }
@@ -654,7 +718,7 @@ async function streamTurn() {
 
   let res;
   try {
-    res = await api.chat({ messages: history.slice(-20) });
+    res = await api.chat({ messages: history, requestId: currentReqId });
   } catch (err) {
     res = { ok: false, error: '请求出错：' + err.message };
   } finally {
@@ -665,6 +729,20 @@ async function streamTurn() {
   push(parser.flush());
   body.classList.remove('is-stream');
 
+  /* 被用户按停：已经出来的部分保留，没出来就算了 */
+  if (res && res.aborted) {
+    if (!acc.trim()) {
+      node.remove();
+      scrollBottom(false);
+      return { ok: false, aborted: true, visible: '', calls };
+    }
+    node.dataset.raw = acc;
+    body.innerHTML = renderMd(acc);
+    node.classList.add('is-stopped');
+    addMsgActs(node, 'bot', acc);
+    return { ok: true, aborted: true, visible: acc, calls };
+  }
+
   if (!res.ok) {
     body.classList.add('is-err');
     body.textContent = res.error || '没有拿到回复。';
@@ -672,7 +750,11 @@ async function streamTurn() {
   }
 
   if (!acc.trim()) node.remove();
-  else body.innerHTML = renderMd(acc);
+  else {
+    node.dataset.raw = acc;
+    body.innerHTML = renderMd(acc);
+    addMsgActs(node, 'bot', acc);
+  }
 
   return { ok: true, visible: acc, calls };
 }
@@ -680,26 +762,35 @@ async function streamTurn() {
 async function conversation(depth) {
   const r = await streamTurn();
 
-  if (!r.ok) {
-    if (depth === 0) history.pop();     /* 首轮失败就撤掉这句用户消息，避免下一轮历史错位 */
-    return;
+  if (!r.ok) return { ok: false, aborted: !!r.aborted };
+
+  history.push({
+    role: 'assistant',
+    content: r.visible.trim() || '（已调用技能）',
+    ts: new Date().toISOString(),
+  });
+
+  if (!r.calls.length || depth >= 1) {
+    schedulePersist();
+    return { ok: true };
   }
-
-  history.push({ role: 'assistant', content: r.visible.trim() || '（已调用技能）' });
-
-  if (!r.calls.length || depth >= 1) return;
 
   const results = [];
   for (const raw of r.calls) results.push(await runSkill(raw));
-  if (!results.length) return;
+  if (!results.length) {
+    schedulePersist();
+    return { ok: true };
+  }
 
   history.push({
     role: 'user',
     content: '［技能结果］\n' + results.map((x) => x.text).join('\n') +
              '\n（这是客户端刚执行完的真实结果。据此回应用户，不要重复调用同一个技能，不要说这两句是系统消息。）',
+    ts: new Date().toISOString(),
   });
 
   await conversation(depth + 1);
+  return { ok: true };
 }
 
 async function send() {
@@ -718,18 +809,71 @@ async function send() {
   resizeInput();
   refreshSend();
 
-  addMsg('me', text);
-  history.push({ role: 'user', content: text });
+  /* 新对话的第一次发言：顺手把标题、时间定下来 */
+  if (!currentId) {
+    currentId = newId();
+    currentTitle = titleOf(text);
+    currentCreatedAt = new Date().toISOString();
+  }
+  currentPersonaId = CONFIG.personaId || 'general';
+
+  const mine = addMsg('me', text);
+  addMsgActs(mine, 'me', text);
+  history.push({ role: 'user', content: text, ts: new Date().toISOString() });
 
   busy = true;
-  sendBtn.disabled = true;
+  currentReqId = newId();
+  setBusy(true);
+
+  try {
+    const r = await conversation(0);
+    if (!r.ok && !r.aborted) {
+      /* 一句都没回成：把刚发的那句从历史里撤掉，免得下轮角色错位 */
+      const last = history[history.length - 1];
+      if (last && last.role === 'user' && last.content === text) history.pop();
+    }
+  } finally {
+    busy = false;
+    currentReqId = null;
+    setBusy(false);
+    refreshSend();
+    scrollBottom(true);
+    input.focus();
+  }
+}
+
+/* 发送键：空闲时发送，生成中变成停止 */
+function onSendClick() {
+  if (busy) { stopGeneration(); return; }
+  send();
+}
+
+async function stopGeneration() {
+  if (!busy || !currentReqId || !api || !api.abort) return;
+  try { await api.abort(currentReqId); } catch (_) {}
+}
+
+async function regenerate() {
+  if (busy) return;
+  const last = col.lastElementChild;
+  if (!last || !last.classList.contains('is-bot') || last.nextElementSibling) return;
+
+  const prev = history[history.length - 1];
+  if (!prev || prev.role !== 'assistant') return;
+  history.pop();
+  last.remove();
+
+  busy = true;
+  currentReqId = newId();
+  setBusy(true);
   try {
     await conversation(0);
   } finally {
     busy = false;
+    currentReqId = null;
+    setBusy(false);
     refreshSend();
     scrollBottom(true);
-    input.focus();
   }
 }
 
@@ -857,7 +1001,7 @@ function bind() {
   input.addEventListener('focus', () => composer.classList.add('is-focus'));
   input.addEventListener('blur', () => composer.classList.remove('is-focus'));
 
-  sendBtn.addEventListener('click', send);
+  sendBtn.addEventListener('click', onSendClick);
 
   input.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) {
@@ -960,6 +1104,7 @@ function bind() {
     if (api && api.openRepo) api.openRepo();
   });
 
+  bindExtras();
   bindDial();
 }
 
@@ -1003,6 +1148,587 @@ async function pickModel(id) {
   closeAll();
 }
 
+/* ---------------- 本地对话、人设与设置 ---------------- */
+const side = $('#side');
+const chatList = $('#chatList');
+const storeState = $('#storeState');
+const histBtn = $('#histBtn');
+const personaBtn = $('#personaBtn');
+const personaModal = $('#personaModal');
+const personaListEl = $('#personaList');
+const personaNameEl = $('#personaName');
+const pmName = $('#pmName');
+const pmPrompt = $('#pmPrompt');
+const pmMsg = $('#pmMsg');
+const saveToggle = $('#saveToggle');
+const saveState = $('#saveState');
+const ctxRange = $('#ctxRange');
+const ctxVal = $('#ctxVal');
+
+let chats = [];
+let currentId = null;
+let currentTitle = '';
+let currentCreatedAt = '';
+let currentPersonaId = 'general';
+let currentReqId = null;
+let pmEditId = null;
+let persistTimer = null;
+
+const SEND_ICON = sendBtn.innerHTML;
+const STOP_ICON = '<svg width="12" height="12" viewBox="0 0 16 16" aria-hidden="true">' +
+  '<rect x="5" y="5" width="6" height="6" rx="1.2" fill="currentColor"/></svg>';
+
+const newId = () => (window.crypto && crypto.randomUUID
+  ? crypto.randomUUID()
+  : 'c' + Date.now().toString(36) + Math.random().toString(36).slice(2, 10));
+
+const titleOf = (s) => String(s).replace(/\s+/g, ' ').trim().slice(0, 24) || '未命名对话';
+const isMeta = (m) => typeof m.content === 'string' && m.content.startsWith('［技能结果］');
+
+function setBusy(on) {
+  sendBtn.innerHTML = on ? STOP_ICON : SEND_ICON;
+  sendBtn.classList.toggle('is-stop', on);
+  sendBtn.title = on ? '停止生成' : '发送';
+  sendBtn.disabled = false;
+}
+
+async function copyText(text) {
+  const s = String(text == null ? '' : text);
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      await navigator.clipboard.writeText(s);
+      return true;
+    }
+  } catch (_) { /* 退回到 execCommand */ }
+
+  const ta = document.createElement('textarea');
+  ta.value = s;
+  ta.setAttribute('readonly', '');
+  ta.style.cssText = 'position:fixed;left:-9999px;top:0;opacity:0';
+  document.body.appendChild(ta);
+  ta.select();
+  let ok = false;
+  try { ok = document.execCommand('copy'); } catch (_) {}
+  ta.remove();
+  return ok;
+}
+
+let toastTimer = null;
+function toast(text) {
+  let el = $('#toast');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'toast';
+    el.className = 'toast';
+    document.body.appendChild(el);
+  }
+  el.textContent = text;
+  el.classList.add('is-on');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('is-on'), 2000);
+}
+
+function fmtWhen(iso) {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '';
+  const hm = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+  const today = new Date();
+  if (d.toDateString() === today.toDateString()) return hm;
+  const y = new Date(today);
+  y.setDate(today.getDate() - 1);
+  if (d.toDateString() === y.toDateString()) return '昨天 ' + hm;
+  return `${d.getMonth() + 1}月${d.getDate()}日`;
+}
+
+/* ---- 存盘（防抖，一轮结束后才写） ---- */
+function schedulePersist() {
+  clearTimeout(persistTimer);
+  persistTimer = setTimeout(() => { persist().catch(() => {}); }, 300);
+}
+
+async function persist() {
+  const h = CONFIG.history || {};
+  if (!h.enabled || !api || !api.historySave) return;
+
+  const msgs = history
+    .filter((m) => !isMeta(m))
+    .map((m) => ({ role: m.role, content: m.content, ts: m.ts || new Date().toISOString() }));
+  if (!msgs.length) return;
+
+  if (!currentId) {
+    currentId = newId();
+    currentCreatedAt = new Date().toISOString();
+  }
+
+  const res = await api.historySave({
+    id: currentId,
+    title: currentTitle || titleOf(msgs[0].content),
+    personaId: currentPersonaId,
+    createdAt: currentCreatedAt || new Date().toISOString(),
+    messages: msgs,
+  });
+
+  if (res && res.ok) refreshChats();
+}
+
+/* ---- 左侧列表 ---- */
+async function refreshChats() {
+  if (!api || !api.historyList) return;
+  try { chats = await api.historyList(); } catch (_) { chats = []; }
+  if (!Array.isArray(chats)) chats = [];
+  renderChats();
+  updateStoreState();
+}
+
+function renderChats() {
+  if (!chats.length) {
+    chatList.innerHTML = '<div class="ch-empty">还没有保存的对话</div>';
+    return;
+  }
+  chatList.innerHTML = chats.map((c) => `
+    <div class="ch${c.id === currentId ? ' is-on' : ''}" data-id="${escAttr(c.id)}">
+      <div class="ch-main">
+        <div class="ch-title">${escHtml(c.title || '未命名对话')}</div>
+        <div class="ch-time">${fmtWhen(c.updatedAt)} · ${c.count || 0} 条</div>
+      </div>
+      <div class="ch-tools">
+        <button class="ch-b" data-act="rename" title="重命名">✎</button>
+        <button class="ch-b" data-act="export" title="导出 Markdown">⤓</button>
+        <button class="ch-b" data-act="del" title="删除">✕</button>
+      </div>
+    </div>`).join('');
+}
+
+function updateStoreState() {
+  const h = CONFIG.history || {};
+  if (!h.enabled) {
+    storeState.textContent = '记录已关闭';
+    storeState.classList.add('is-off');
+    return;
+  }
+  storeState.classList.remove('is-off');
+  storeState.textContent = h.encrypted ? '加密保存在本机' : '保存在本机';
+}
+
+function openSide() {
+  side.classList.add('is-open');
+  side.setAttribute('aria-hidden', 'false');
+  histBtn.classList.add('is-on');
+  refreshChats();
+}
+
+function closeSide() {
+  side.classList.remove('is-open');
+  side.setAttribute('aria-hidden', 'true');
+  histBtn.classList.remove('is-on');
+}
+
+function newChat() {
+  if (busy) { toast('等这一轮回复结束'); return; }
+  currentId = null;
+  currentTitle = '';
+  currentCreatedAt = '';
+  currentPersonaId = CONFIG.personaId || 'general';
+  resetThread();
+  renderChats();
+  closeSide();
+  input.focus();
+}
+
+async function openChat(id) {
+  if (busy) { toast('等这一轮回复结束再切换'); return; }
+
+  let conv;
+  try { conv = await api.historyGet(id); } catch (_) { return; }
+  if (!conv) { toast('这条对话打不开了'); return; }
+
+  col.innerHTML = '';
+  history.length = 0;
+  currentId = conv.id;
+  currentTitle = conv.title;
+  currentCreatedAt = conv.createdAt;
+  currentPersonaId = conv.personaId || CONFIG.personaId || 'general';
+  if (conv.personaId && conv.personaId !== CONFIG.personaId
+      && (CONFIG.personas || []).some((p) => p.id === conv.personaId)) {
+    CONFIG.personaId = conv.personaId;
+    syncPersonaChip();
+    api.selectPersona(conv.personaId).catch(() => {});
+  }
+
+  for (const m of conv.messages) {
+    const kind = m.role === 'user' ? 'me' : 'bot';
+    const node = addMsg(kind, '');
+    const body = node.querySelector('.msg-body');
+    if (kind === 'bot') {
+      node.dataset.raw = m.content;
+      body.innerHTML = renderMd(m.content);
+    } else {
+      body.textContent = m.content;
+    }
+    addMsgActs(node, kind, m.content);
+    history.push({ role: m.role, content: m.content, ts: m.ts });
+  }
+
+  renderChats();
+  closeSide();
+  scrollBottom(false);
+}
+
+async function exportChat(id) {
+  let r;
+  try { r = await api.historyExport(id); } catch (_) { return; }
+  if (!r) return;
+  if (r.ok) toast('已导出到 ' + r.path);
+  else if (!r.canceled) toast(r.error || '导出失败');
+}
+
+async function deleteChat(chat) {
+  if (!window.confirm(`删除「${chat.title}」？只删这一条，不影响其他对话。`)) return;
+  try { await api.historyDelete(chat.id); } catch (_) { return; }
+  if (chat.id === currentId) newChat();
+  refreshChats();
+}
+
+function startRename(row, chat) {
+  const titleEl = row.querySelector('.ch-title');
+  if (!titleEl) return;
+
+  const field = document.createElement('input');
+  field.className = 'ch-edit';
+  field.value = chat.title;
+  field.maxLength = 60;
+  field.spellcheck = false;
+  titleEl.replaceWith(field);
+  field.focus();
+  field.select();
+
+  let done = false;
+  const finish = async (save) => {
+    if (done) return;
+    done = true;
+    const t = field.value.trim();
+    if (save && t && t !== chat.title) {
+      try { await api.historyRename(chat.id, t); } catch (_) {}
+      if (chat.id === currentId) currentTitle = t;
+    }
+    field.replaceWith(titleEl);
+    refreshChats();
+  };
+
+  field.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); finish(true); }
+    if (e.key === 'Escape') { e.preventDefault(); finish(false); }
+  });
+  field.addEventListener('blur', () => finish(true));
+}
+
+async function onChatListClick(e) {
+  const row = e.target.closest('.ch');
+  if (!row) return;
+  const chat = chats.find((c) => c.id === row.dataset.id);
+  if (!chat) return;
+
+  const btn = e.target.closest('.ch-b');
+  if (btn) {
+    if (btn.dataset.act === 'rename') { startRename(row, chat); return; }
+    if (btn.dataset.act === 'export') { await exportChat(chat.id); return; }
+    if (btn.dataset.act === 'del') { await deleteChat(chat); return; }
+  }
+
+  await openChat(chat.id);
+}
+
+/* ---- 人设 ---- */
+function renderPersonas() {
+  const list = CONFIG.personas || [];
+  personaListEl.innerHTML = list.map((p) => {
+    const on = p.id === CONFIG.personaId;
+    const custom = String(p.id).startsWith('u-');
+    return `<div class="pi${on ? ' is-on' : ''}" data-pid="${escAttr(p.id)}">
+      <span class="pi-name">${escHtml(p.name)}${custom ? '<em class="pi-custom">自定义</em>' : ''}</span>
+      ${on ? TICK : ''}
+      ${custom ? `<span class="pi-tool" data-pedit="${escAttr(p.id)}" title="编辑">✎</span>
+        <span class="pi-tool" data-pdel="${escAttr(p.id)}" title="删除">✕</span>` : ''}
+    </div>`;
+  }).join('');
+}
+
+function syncPersonaChip() {
+  const p = (CONFIG.personas || []).find((x) => x.id === CONFIG.personaId);
+  personaNameEl.textContent = p ? p.name : '通用助手';
+}
+
+function openPersonas() {
+  renderPersonas();
+  pmMsg.textContent = '';
+  personaModal.classList.add('is-open');
+  personaModal.setAttribute('aria-hidden', 'false');
+}
+
+function closePersonas() {
+  personaModal.classList.remove('is-open');
+  personaModal.setAttribute('aria-hidden', 'true');
+}
+
+async function pickPersona(id) {
+  if (busy) { toast('等这一轮回复结束再换'); return; }
+  let cfg;
+  try { cfg = await api.selectPersona(id); } catch (_) { return; }
+  if (!cfg) return;
+  CONFIG = cfg;
+  currentPersonaId = id;
+  syncPersonaChip();
+  renderPersonas();
+  closePersonas();
+  if (currentId) schedulePersist();
+}
+
+async function removePersona(id) {
+  if (!window.confirm('删除这个人设？')) return;
+  let res;
+  try { res = await api.deletePersona(id); } catch (_) { return; }
+  if (!res || !res.ok) { toast((res && res.error) || '删除失败'); return; }
+  CONFIG = res.config;
+  if (pmEditId === id) { pmEditId = null; pmName.value = ''; pmPrompt.value = ''; }
+  renderPersonas();
+  syncPersonaChip();
+}
+
+async function savePersonaForm() {
+  const name = pmName.value.trim();
+  const prompt = pmPrompt.value.trim();
+  if (!name) { pmMsg.textContent = '先给它起个名字。'; return; }
+  if (!prompt) { pmMsg.textContent = '写一句提示词，告诉它该怎么说话。'; return; }
+
+  let res;
+  try { res = await api.savePersona({ id: pmEditId || '', name, prompt }); }
+  catch (err) { pmMsg.textContent = '保存失败：' + err.message; return; }
+
+  if (!res || !res.ok) { pmMsg.textContent = (res && res.error) || '保存失败。'; return; }
+
+  CONFIG = res.config;
+  pmEditId = null;
+  pmName.value = '';
+  pmPrompt.value = '';
+  pmMsg.textContent = '已保存。';
+  renderPersonas();
+  syncPersonaChip();
+}
+
+async function onPersonaListClick(e) {
+  const del = e.target.closest('[data-pdel]');
+  if (del) { await removePersona(del.dataset.pdel); return; }
+
+  const edit = e.target.closest('[data-pedit]');
+  if (edit) {
+    const p = (CONFIG.personas || []).find((x) => x.id === edit.dataset.pedit);
+    if (!p) return;
+    pmEditId = p.id;
+    pmName.value = p.name;
+    pmPrompt.value = p.prompt || '';
+    pmMsg.textContent = '正在编辑「' + p.name + '」，保存后覆盖。';
+    pmName.focus();
+    return;
+  }
+
+  const item = e.target.closest('[data-pid]');
+  if (item) await pickPersona(item.dataset.pid);
+}
+
+/* ---- 设置 ---- */
+const searchToggle = $('#searchToggle');
+const searchState = $('#searchState');
+const memoryToggle = $('#memoryToggle');
+const memoryState = $('#memoryState');
+const memoryModal = $('#memoryModal');
+const memText = $('#memText');
+const memMsg = $('#memMsg');
+
+function setToggle(btn, tag, on) {
+  tag.textContent = on ? '开' : '关';
+  btn.classList.toggle('is-on', on);
+  btn.setAttribute('aria-checked', on ? 'true' : 'false');
+}
+
+function applySettings() {
+  const h = CONFIG.history || {};
+  const lim = Math.min(60, Math.max(6, Number(h.contextLimit) || 30));
+  ctxRange.value = String(lim);
+  ctxVal.textContent = String(lim);
+  setToggle(saveToggle, saveState, !!h.enabled);
+  setToggle(searchToggle, searchState, !!(CONFIG.search || {}).enabled);
+  setToggle(memoryToggle, memoryState, !!(CONFIG.memory || {}).enabled);
+  updateStoreState();
+}
+
+async function flipSetting(patch) {
+  let cfg;
+  try { cfg = await api.saveSettings(patch); }
+  catch (_) { return null; }
+  if (cfg) { CONFIG = cfg; applySettings(); }
+  return cfg;
+}
+
+async function toggleSave() {
+  const cfg = await flipSetting({ historyEnabled: !CONFIG.history.enabled });
+  if (cfg && CONFIG.history.enabled) schedulePersist();
+}
+
+async function toggleSearch() {
+  const on = !(CONFIG.search || {}).enabled;
+  const cfg = await flipSetting({ webSearch: on });
+  if (cfg && on) toast('联网搜索已开：它会自己去 Bing/百度查实时信息');
+}
+
+async function toggleMemory() {
+  const on = !(CONFIG.memory || {}).enabled;
+  const cfg = await flipSetting({ memoryEnabled: on });
+  if (cfg && on) toast('本地记忆已开：对它说「记住…」即可');
+}
+
+/* ---- 记忆弹窗 ---- */
+async function openMemory() {
+  if (!(CONFIG.memory || {}).enabled) {
+    toast('先在设置里打开「本地记忆」');
+    return;
+  }
+  memMsg.textContent = '';
+  memText.value = '读取中…';
+  memoryModal.classList.add('is-open');
+  memoryModal.setAttribute('aria-hidden', 'false');
+  try {
+    const r = await api.memoryGet();
+    memText.value = (r && r.text) || '';
+  } catch (_) {
+    memText.value = '';
+    memMsg.textContent = '读取失败。';
+  }
+}
+
+function closeMemory() {
+  memoryModal.classList.remove('is-open');
+  memoryModal.setAttribute('aria-hidden', 'true');
+}
+
+async function saveMemory() {
+  let r;
+  try { r = await api.memorySet(memText.value); }
+  catch (err) { memMsg.textContent = '保存失败：' + err.message; return; }
+  memMsg.textContent = (r && r.ok) ? '已保存。' : ((r && r.error) || '保存失败。');
+}
+
+async function clearMemory() {
+  if (!window.confirm('清空全部记忆？删了就找不回来了。')) return;
+  try { await api.memorySet(''); } catch (_) {}
+  memText.value = '';
+  memMsg.textContent = '已清空。';
+}
+
+async function onCtxInput() {
+  ctxVal.textContent = String(ctxRange.value);
+}
+
+async function onCtxChange() {
+  const n = Number(ctxRange.value);
+  let cfg;
+  try { cfg = await api.saveSettings({ contextLimit: n }); } catch (_) { return; }
+  if (cfg) CONFIG = cfg;
+  applySettings();
+}
+
+async function openStoreFolder() {
+  try {
+    const r = await api.historyOpenFolder();
+    if (r && !r.ok) toast(r.error || '打不开文件夹');
+  } catch (_) {}
+}
+
+/* ---- 正文里的复制代码 / 外链 ---- */
+async function onThreadClick(e) {
+  const cp = e.target.closest('.cb-copy');
+  if (cp) {
+    const box = cp.closest('.code');
+    const code = box && box.querySelector('pre code');
+    const ok = await copyText(code ? code.textContent : '');
+    cp.textContent = ok ? '已复制' : '复制失败';
+    setTimeout(() => { cp.textContent = '复制'; }, 1200);
+    return;
+  }
+
+  const a = e.target.closest('a[data-ext]');
+  if (!a) return;
+  e.preventDefault();
+  const url = a.getAttribute('href');
+  if (!url) return;
+  if (!window.confirm('用系统浏览器打开这个链接？\n\n' + url)) return;
+  try { await api.openExternal(url); } catch (_) {}
+}
+
+/* ---- 绑定与初始化 ---- */
+function bindExtras() {
+  histBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (side.classList.contains('is-open')) closeSide();
+    else openSide();
+  });
+  $('#newChat').addEventListener('click', newChat);
+  $('#openStore').addEventListener('click', openStoreFolder);
+  chatList.addEventListener('click', onChatListClick);
+  document.addEventListener('click', (e) => {
+    if (!side.classList.contains('is-open')) return;
+    if (e.target.closest('#side') || e.target.closest('#histBtn')) return;
+    closeSide();
+  });
+
+  personaBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    closeAll();
+    openPersonas();
+  });
+  personaModal.querySelectorAll('[data-pclose]').forEach((el) => {
+    el.addEventListener('click', closePersonas);
+  });
+  personaListEl.addEventListener('click', onPersonaListClick);
+  $('#pmSave').addEventListener('click', savePersonaForm);
+  $('#pmNew').addEventListener('click', () => {
+    pmEditId = null;
+    pmName.value = '';
+    pmPrompt.value = '';
+    pmMsg.textContent = '';
+    pmName.focus();
+  });
+
+  saveToggle.addEventListener('click', toggleSave);
+  searchToggle.addEventListener('click', toggleSearch);
+  memoryToggle.addEventListener('click', toggleMemory);
+  $('#memoryEdit').addEventListener('click', () => { closeAll(); openMemory(); });
+  memoryModal.querySelectorAll('[data-memclose]').forEach((el) => {
+    el.addEventListener('click', closeMemory);
+  });
+  $('#memSave').addEventListener('click', saveMemory);
+  $('#memClear').addEventListener('click', clearMemory);
+  $('#storeFolder').addEventListener('click', openStoreFolder);
+  ctxRange.addEventListener('input', onCtxInput);
+  ctxRange.addEventListener('change', onCtxChange);
+
+  thread.addEventListener('click', onThreadClick);
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape') return;
+    if (memoryModal.classList.contains('is-open')) { closeMemory(); return; }
+    if (personaModal.classList.contains('is-open')) { closePersonas(); return; }
+    if (side.classList.contains('is-open')) closeSide();
+  });
+}
+
+function initExtras() {
+  applySettings();
+  syncPersonaChip();
+  renderPersonas();
+  updateStoreState();
+  refreshChats();
+}
+
 /* ---------------- 启动 ---------------- */
 document.body.classList.toggle('no-motion', reduceMotion());
 if (api && api.transparency === false) {
@@ -1017,6 +1743,7 @@ renderDial();
 const bootDone = startBoot();
 const configReady = loadConfig().then(() => {
   if (CONFIG.hasKey) resetThread();
+  initExtras();
 });
 
 /* 启动动画播完、配置也读回来，才决定是否弹条款 */

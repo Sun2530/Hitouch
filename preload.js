@@ -19,6 +19,7 @@ contextBridge.exposeInMainWorld('hitouch', {
   clearKey: () => ipcRenderer.invoke('api:clear'),
   testKey: (payload) => ipcRenderer.invoke('api:test', payload),
   chat: (payload) => ipcRenderer.invoke('api:chat', payload),
+  abort: (requestId) => ipcRenderer.invoke('api:abort', { requestId }),
   onDelta: (cb) => {
     const handler = (_e, data) => cb(data);
     ipcRenderer.on('api:delta', handler);
@@ -29,6 +30,31 @@ contextBridge.exposeInMainWorld('hitouch', {
     ipcRenderer.on('api:reasoning', handler);
     return () => ipcRenderer.removeListener('api:reasoning', handler);
   },
+
+  /* --- 人设 / 设置 --- */
+  personaList: () => ipcRenderer.invoke('persona:list'),
+  selectPersona: (id) => ipcRenderer.invoke('persona:select', { id }),
+  savePersona: (payload) => ipcRenderer.invoke('persona:save', payload),
+  deletePersona: (id) => ipcRenderer.invoke('persona:delete', { id }),
+  saveSettings: (patch) => ipcRenderer.invoke('settings:set', patch),
+
+  /* --- 本地会话 --- */
+  historyList: () => ipcRenderer.invoke('history:list'),
+  historyGet: (id) => ipcRenderer.invoke('history:get', { id }),
+  historySave: (conv) => ipcRenderer.invoke('history:save', { conv }),
+  historyDelete: (id) => ipcRenderer.invoke('history:delete', { id }),
+  historyClear: () => ipcRenderer.invoke('history:clear'),
+  historyRename: (id, title) => ipcRenderer.invoke('history:rename', { id, title }),
+  historyInfo: () => ipcRenderer.invoke('history:info'),
+  historyOpenFolder: () => ipcRenderer.invoke('history:open-folder'),
+  historyExport: (id) => ipcRenderer.invoke('history:export', { id }),
+  openExternal: (url) => ipcRenderer.invoke('app:open-external', { url }),
+
+  /* --- 联网搜索 / 本地记忆 --- */
+  runSearch: (query) => ipcRenderer.invoke('search:run', { query }),
+  memoryGet: () => ipcRenderer.invoke('memory:get'),
+  memorySet: (text) => ipcRenderer.invoke('memory:set', { text }),
+  memoryAppend: (text) => ipcRenderer.invoke('memory:append', { text }),
 
   /* --- 条款与仓库 --- */
   acceptConsent: () => ipcRenderer.invoke('consent:accept'),

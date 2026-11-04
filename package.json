@@ -1,17 +1,18 @@
 {
   "name": "hitouch",
   "productName": "Hitouch",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "A quiet desktop client for DeepSeek",
   "main": "main.js",
   "author": "Sun2530",
   "license": "MIT",
   "scripts": {
     "start": "electron .",
-    "dist": "electron-builder --win portable"
+    "dist": "electron-builder --win portable nsis"
   },
   "devDependencies": {
-    "electron": "33.4.11",
+    "@highlightjs/cdn-assets": "^11.9.0",
+    "electron": "^33.4.11",
     "electron-builder": "25.1.8"
   },
   "build": {
@@ -25,6 +26,7 @@
     "files": [
       "main.js",
       "preload.js",
+      "lib/**/*",
       "src/**/*",
       "package.json"
     ],
@@ -56,7 +58,7 @@
     "nsis": {
       "artifactName": "Hitouch-${version}-setup.exe",
       "oneClick": false,
-      "perMachine": false,
+      "perMachine": true,
       "allowElevation": true,
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,

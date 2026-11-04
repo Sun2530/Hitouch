@@ -8,7 +8,7 @@
 
 <br />
 
-[![release](https://img.shields.io/badge/release-v0.1.0-blue)](https://gitee.com/sunkuforgame/Hitouch/releases/v0.1.0)
+[![release](https://img.shields.io/badge/release-v0.2.0-blue)](https://gitee.com/sunkuforgame/Hitouch/releases/v0.2.0)
 [![license](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![stars](https://gitee.com/sunkuforgame/Hitouch/badge/star.svg)](https://gitee.com/sunkuforgame/Hitouch/stargazers)
 [![forks](https://gitee.com/sunkuforgame/Hitouch/badge/fork.svg)](https://gitee.com/sunkuforgame/Hitouch/members)
@@ -34,7 +34,13 @@ Hitouch 是跑在本机的 DeepSeek 对话客户端。它不提供模型，也�
 
 ## ✨ 功能特性
 
-- 💬 **流式对话** —— 支持代码块、粗体、列表、引用与行内代码，回答实时渲染
+- 💬 **流式对话** —— 回答实时渲染，可随时停下，也可以让它重新生成
+- 🗂️ **本地会话** —— 默认关、不打扰；打开后对话加密存在本机，左上角拉开就能翻回去；不上传、不同步
+- 🎭 **人设** —— 内置通用助手、学习助教、编程搭子、翻译，也能自己写一个
+- 🌐 **联网搜索** —— 默认关。打开后它自己去 Bing / 百度查新闻、价格、天气等实时信息，并在回答里注明来源
+- 🧠 **本地记忆** —— 默认关。打开后对它说「记住我喜欢简洁」，它就把这条写进本地加密文件；随时查看、清空
+- ✍️ **Markdown** —— 标题、列表、表格、引用、代码高亮与一键复制
+- 📤 **导出** —— 任意一段对话，一键存成 Markdown
 - 🧠 **推理开关** —— 输入框右下角的滑轨控制模型是否先思考再回答：关掉更快，打开更稳
 - 🔀 **双模型切换** —— DeepSeek-V4.1-Flash 与 DeepSeek-V4-Pro，随时切换
 - ⏰ **闹钟提醒** —— 直接说「明天八点提醒我」，模型自动转成定时任务，到点弹窗
@@ -45,7 +51,8 @@ Hitouch 是跑在本机的 DeepSeek 对话客户端。它不提供模型，也�
 
 界面上的东西都是必要的，其余都删掉了：
 
-- 🚫 **没有侧边栏** —— 历史不落盘，关窗即清
+- 🚫 **没有常驻侧边栏** —— 对话收在左上角，需要时再拉开
+- ☁️ **没有云同步** —— 记录只留在当前 Windows 账户里
 - 🧩 **没有设置迷宫** —— 全部选项在同一个面板里，一眼看完
 - ⌨️ **没有快捷键表** —— 回车发送，Shift + 回车换行，到此为止
 - 🎭 **没有主题、皮肤、插件市场** —— 白底就是白底
@@ -71,8 +78,8 @@ Hitouch 是跑在本机的 DeepSeek 对话客户端。它不提供模型，也�
 
 | 文件 | 说明 |
 | --- | --- |
-| `Hitouch-0.1.0-portable.exe` | 👜 **便携版**。双击即用，不写注册表，可以放进 U 盘带走 |
-| `Hitouch-0.1.0-setup.exe` | 💿 **安装包**。可选安装目录，创建开始菜单与桌面快捷方式，可从「应用和功能」卸载 |
+| `Hitouch-0.2.0-portable.exe` | 👜 **便携版**。双击即用，不写注册表，可以放进 U 盘带走 |
+| `Hitouch-0.2.0-setup.exe` | 💿 **安装包**。可选安装目录，创建开始菜单与桌面快捷方式，可从「应用和功能」卸载 |
 
 > 📌 体积偏大是因为打包了 Electron 运行时，属正常现象。
 
@@ -99,10 +106,18 @@ npm run dist     # 产出 dist/ 下的便携版与安装包
 ## 🔐 数据与隐私
 
 - **API Key**：DPAPI 加密，存于本机，不上传
-- **对话内容**：不落盘。唯一例外是闹钟，它需要存在本地才能到点触发
+- **对话内容**：默认不落盘，关窗即清。在设置里打开「保存对话记录」后，才用 Windows DPAPI 加密存到本机（`%APPDATA%\Hitouch\conversations`）；不上传、不同步
+- **本地记忆**：默认关。开启后加密存本机，随时可看、可清
+- **联网搜索**：默认关。开启后搜索关键词会发给 Bing 或百度；不开就永远不搜
+- **闹钟**：需要存在本地才能到点触发
 - **遥测**：无
 
-除 DeepSeek 之外，软件不向任何服务器发送数据。
+除 DeepSeek 和你手动打开的搜索引擎之外，软件不向任何服务器发送数据。
+
+## 🆕 最近更新
+
+- **0.2.0** —— 人设自定义、联网搜索（默认关）、本地会话与记忆（默认关）、Markdown 表格与代码高亮、停止生成、重新生成、导出
+- 0.1.0 —— 首个公开版本
 
 ## 💬 交流反馈
 

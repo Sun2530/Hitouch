@@ -4,7 +4,7 @@
 
 A quiet desktop client for talking to DeepSeek.
 
-<sub>Windows x64 · 0.1.0 · MIT</sub>
+<sub>Windows x64 · 0.2.0 · MIT</sub>
 
 <sub>[中文](README.md) · **English**</sub>
 
@@ -26,7 +26,8 @@ No account in between, no sync, no relay layer.
 
 Everything on screen is necessary; the rest was removed. Concretely:
 
-- **No sidebar.** History is never written to disk — close the window and it's gone.
+- **No permanent sidebar.** Conversations live behind the button in the top-left; pull them out when needed.
+- **No cloud sync.** Records stay inside the current Windows account.
 - **No settings maze.** Every option lives in a single panel, readable in one glance.
 - **No shortcut reference.** Enter sends, Shift + Enter breaks the line. That's all.
 - **No themes, skins, or plugin marketplace.** White is white.
@@ -47,7 +48,22 @@ The icons were drawn one by one rather than pulled from an icon set.
 ## Features
 
 **Conversation**
-Streamed output, with support for code blocks, bold, lists, quotes, and inline code.
+Streamed output with headings, lists, tables, quotes, inline code, and highlighted code blocks. Stop a reply mid-stream, or ask for another one.
+
+**Local history**
+Off by default. Turn it on and conversations are encrypted with Windows DPAPI and stored on this machine — pull the drawer from the top-left to revisit them. Never uploaded, never synced.
+
+**Personas**
+Four built-ins — general, study tutor, coding partner, translator — plus your own.
+
+**Web search**
+Off by default. Once enabled, the model searches Bing / Baidu by itself for news, prices, weather and other live facts, and cites its sources. No API key needed.
+
+**Local memory**
+Off by default. Once enabled, say "remember I prefer…" and it writes the note into a local encrypted file; view or wipe it anytime.
+
+**Export**
+Save any conversation as Markdown.
 
 **Reasoning toggle**
 The rail at the bottom-right of the composer controls whether the model thinks before answering. Off is faster; on is steadier.
@@ -70,8 +86,8 @@ Two builds, identical in function. Pick either.
 
 | File | Notes |
 | --- | --- |
-| `Hitouch-0.1.0-portable.exe` | Portable. Double-click to run, writes nothing to the registry, fits on a USB stick. |
-| `Hitouch-0.1.0-setup.exe` | Installer. Choose the install directory, creates Start menu and desktop shortcuts, uninstalls from Apps & features. |
+| `Hitouch-0.2.0-portable.exe` | Portable. Double-click to run, writes nothing to the registry, fits on a USB stick. |
+| `Hitouch-0.2.0-setup.exe` | Installer. Choose the install directory, creates Start menu and desktop shortcuts, uninstalls from Apps & features. |
 
 Get them from [Releases](https://github.com/Sun2530/Hitouch/releases). The size is large because the Electron runtime is bundled.
 
@@ -98,10 +114,13 @@ The stack is Electron plus plain HTML/CSS/JS. No frontend framework, no bundler,
 ## Data
 
 - **API key** — DPAPI-encrypted, stored locally, never uploaded.
-- **Conversations** — not persisted. The one exception is the alarm, which has to live on disk to fire on time.
+- **Conversations** — never written to disk by default. If you enable history in Settings, they are DPAPI-encrypted into `%APPDATA%\Hitouch\conversations`. Never uploaded or synced.
+- **Local memory** — off by default; when on, stored encrypted locally and always viewable and erasable.
+- **Web search** — off by default; when on, only the search keywords go to Bing or Baidu.
+- **Alarms** — kept on disk so they can fire on time.
 - **Telemetry** — none.
 
-Apart from DeepSeek, the app contacts no server.
+Apart from DeepSeek and the search engine you explicitly turned on, the app contacts no server.
 
 ## Note
 
