@@ -1,183 +1,214 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Hitouch — 安静的 DeepSeek 桌面客户端</title>
-<meta name="description" content="Hitouch 是一个 Windows 上的 DeepSeek 桌面客户端。填入自己的 API Key 就能用，不注册、不登录、不上传对话记录。" />
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hitouch — 一个安静的 DeepSeek 桌面客户端</title>
+<meta name="description" content="Hitouch 是一个人写的 Windows 桌面客户端：填自己的 DeepSeek API Key 就能对话，不注册、不登录，聊天记录默认只存在本机。">
 <style>
-  :root {
-    --bg: #fbfaf8;
-    --ink: #1d1c1a;
-    --ink-2: #5b5852;
-    --line: #e6e2db;
-    --card: #ffffff;
-    --accent: #2f6f5e;
-    --accent-ink: #ffffff;
+  :root{
+    --bg:#FFFFFF; --ink:#101012; --ink-2:#5E5F63; --ink-3:#9A9B9F; --ink-4:#C3C4C8;
+    --line:#EDEDEF; --surface:#F5F5F6; --surface-2:#EFEFF1; --blue:#2F7BF6;
+    --font-ui:"Segoe UI Variable Text","Segoe UI","HarmonyOS Sans SC","MiSans",
+              "Noto Sans SC","Source Han Sans SC","Microsoft YaHei UI","Microsoft YaHei",
+              "PingFang SC",system-ui,sans-serif;
+    --font-mono:"Cascadia Mono","JetBrains Mono",Consolas,ui-monospace,monospace;
+    --ease:cubic-bezier(0.16,1,0.3,1);
   }
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --bg: #16181a;
-      --ink: #f0eee9;
-      --ink-2: #a5a29b;
-      --line: #2b2f33;
-      --card: #1d2124;
-      --accent: #5cbba0;
-      --accent-ink: #10201b;
-    }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    background:var(--bg);color:var(--ink);font-family:var(--font-ui);
+    font-size:15px;line-height:26px;
+    -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;
+    font-kerning:normal;
   }
-  * { box-sizing: border-box; }
-  html { -webkit-text-size-adjust: 100%; }
-  body {
-    margin: 0;
-    background: var(--bg);
-    color: var(--ink);
-    font: 16px/1.75 -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
-          "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
-    -webkit-font-smoothing: antialiased;
+  ::selection{background:rgba(47,123,246,.16)}
+  a{color:inherit;text-decoration:none}
+
+  /* 常驻极淡径向光，和 App 里同一层 */
+  .ambient{position:fixed;inset:0;pointer-events:none;z-index:0;
+    background:
+      radial-gradient(880px 420px at 50% -140px,rgba(47,123,246,.07),transparent 70%),
+      radial-gradient(720px 380px at 100% 108%,rgba(120,120,135,.05),transparent 72%);}
+
+  .page{position:relative;z-index:1;max-width:700px;margin:0 auto;padding:0 24px 72px}
+
+  /* 顶栏：和 App 里一样，绿点 + 字距拉开的名字 */
+  .bar{height:40px;display:flex;align-items:center;gap:9px;padding:0 2px}
+  .bar-mark{width:5px;height:5px;border-radius:50%;background:#23A55A;
+    box-shadow:0 0 6px rgba(35,165,90,.38)}
+  .bar-name{font-size:12px;letter-spacing:.1em;color:var(--ink-3)}
+  .bar-r{margin-left:auto;font-size:12px;letter-spacing:.04em;color:var(--ink-4)}
+
+  /* 首屏 */
+  .hero{padding:72px 0 0}
+  .hero h1{font-size:34px;line-height:1.32;font-weight:600;letter-spacing:-.02em}
+  .hero h1 span{color:var(--ink-3)}
+  .lede{margin-top:18px;color:var(--ink-2);max-width:33em}
+
+  .actions{margin-top:30px;display:flex;flex-wrap:wrap;gap:10px}
+  .btn{display:inline-flex;align-items:baseline;gap:9px;
+    padding:11px 20px;border-radius:999px;font-size:14px;line-height:1.4;
+    background:var(--surface);color:var(--ink);
+    transition:background 220ms var(--ease),transform 140ms var(--ease),box-shadow 220ms var(--ease)}
+  .btn:hover{background:var(--surface-2)}
+  .btn:active{transform:scale(.98)}
+  .btn-solid{background:var(--ink);color:#fff}
+  .btn-solid:hover{background:#26272B}
+  .btn .mb{font-size:12px;color:var(--ink-3);font-variant-numeric:tabular-nums}
+  .btn-solid .mb{color:rgba(255,255,255,.55)}
+  .fineprint{margin-top:14px;font-size:13px;color:var(--ink-3)}
+
+  /* 截图 */
+  .shot{margin:44px 0 0}
+  .shot img{display:block;width:100%;height:auto;border:1px solid #E6E6E9;
+    border-radius:12px;box-shadow:0 1px 2px rgba(16,16,18,.05),0 26px 64px rgba(16,16,18,.10)}
+  .shot figcaption{margin-top:10px;font-size:12px;color:var(--ink-4);text-align:center}
+
+  /* 小节标题：小、疏、灰，不抢戏 */
+  h2{margin:56px 0 6px;font-size:12px;font-weight:500;letter-spacing:.14em;color:var(--ink-3)}
+
+  /* 问答行，像 App 里的设置列表 */
+  .rows{margin-top:4px}
+  .row{display:grid;grid-template-columns:150px 1fr;gap:16px;
+    padding:13px 0;border-top:1px solid var(--line)}
+  .row dt{font-size:13.5px;color:var(--ink-3)}
+  .row dd{font-size:14.5px;color:var(--ink-2)}
+  .row dd b{color:var(--ink);font-weight:500}
+
+  .prose{margin-top:10px;color:var(--ink-2);font-size:14.5px}
+  .prose + .prose{margin-top:12px}
+  .prose b{color:var(--ink);font-weight:500}
+
+  /* 提示块：圆角向 composer（21px）看齐 */
+  .note{margin-top:14px;background:var(--surface);border-radius:21px;padding:18px 20px}
+  .note p{font-size:14.5px;line-height:25px;color:var(--ink-2)}
+  .note p + p{margin-top:10px}
+  .note .k{color:var(--ink);font-weight:500}
+
+  /* 折叠区 */
+  details{margin-top:10px;border-top:1px solid var(--line);padding:13px 0}
+  details summary{list-style:none;cursor:pointer;font-size:14px;color:var(--ink-2);
+    display:flex;align-items:center;gap:8px}
+  details summary::-webkit-details-marker{display:none}
+  details summary::before{content:"›";color:var(--ink-4);font-size:16px;line-height:1;
+    transition:transform 220ms var(--ease);display:inline-block}
+  details[open] summary::before{transform:rotate(90deg)}
+  details summary:hover{color:var(--ink)}
+  details .body{padding:12px 0 4px 18px}
+  pre{margin:8px 0;background:var(--surface);border-radius:12px;padding:13px 15px;
+    font-family:var(--font-mono);font-size:12.5px;line-height:21px;color:var(--ink-2);
+    overflow-x:auto}
+  code{font-family:var(--font-mono);font-size:12.5px}
+  .hash{color:var(--ink-2);word-break:break-all}
+
+  /* 作者块 */
+  .author{margin-top:60px;padding-top:26px;border-top:1px solid var(--line)}
+  .author p{font-size:14.5px;line-height:26px;color:var(--ink-2)}
+  .author p + p{margin-top:12px}
+  .author a{color:var(--blue);text-decoration:underline;text-decoration-color:rgba(47,123,246,.3);
+    text-underline-offset:3px}
+  .author a:hover{text-decoration-color:var(--blue)}
+
+  footer{margin-top:44px;display:flex;flex-wrap:wrap;gap:6px 18px;
+    font-size:12.5px;color:var(--ink-4)}
+  footer a{color:var(--ink-3)}
+  footer a:hover{color:var(--ink)}
+
+  @media (max-width:560px){
+    .hero{padding-top:48px}
+    .hero h1{font-size:27px}
+    .row{grid-template-columns:1fr;gap:2px}
+    .row dt{font-size:13px}
   }
-  .wrap { max-width: 760px; margin: 0 auto; padding: 0 24px; }
-  header { padding: 34px 0 0; display: flex; align-items: center; gap: 10px; }
-  .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--accent); }
-  .brand { font-weight: 600; letter-spacing: .02em; }
-  .ver { color: var(--ink-2); font-size: 13px; margin-left: auto; letter-spacing: .06em; }
-
-  .hero { padding: 56px 0 8px; }
-  h1 { font-size: clamp(30px, 5.2vw, 44px); line-height: 1.25; letter-spacing: -.02em; margin: 0 0 14px; font-weight: 650; }
-  .lead { font-size: clamp(16px, 2.2vw, 19px); color: var(--ink-2); margin: 0 0 30px; max-width: 34em; }
-  .lead b { color: var(--ink); font-weight: 600; }
-
-  .actions { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
-  .btn {
-    display: inline-flex; flex-direction: column; justify-content: center;
-    text-decoration: none; border-radius: 12px; padding: 13px 22px;
-    font-weight: 600; line-height: 1.35; border: 1px solid transparent;
-    transition: transform .12s ease, opacity .12s ease;
-  }
-  .btn:active { transform: translateY(1px); }
-  .btn small { font-weight: 400; font-size: 12px; opacity: .75; letter-spacing: .01em; }
-  .btn-primary { background: var(--accent); color: var(--accent-ink); }
-  .btn-primary:hover { opacity: .92; }
-  .btn-ghost { border-color: var(--line); color: var(--ink); background: transparent; }
-  .btn-ghost:hover { border-color: var(--ink-2); }
-  .meta { color: var(--ink-2); font-size: 13px; margin: 16px 0 0; }
-
-  .shot { margin: 44px 0 0; border: 1px solid var(--line); border-radius: 16px; overflow: hidden; background: var(--card); }
-  .shot img { display: block; width: 100%; height: auto; }
-
-  section { padding: 48px 0 0; }
-  h2 { font-size: 15px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-2); font-weight: 600; margin: 0 0 18px; }
-  .cards { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); }
-  .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 18px 18px 16px; }
-  .card h3 { margin: 0 0 6px; font-size: 15px; font-weight: 650; }
-  .card p { margin: 0; color: var(--ink-2); font-size: 14px; line-height: 1.65; }
-
-  p, li { color: var(--ink-2); }
-  section > p { max-width: 36em; }
-  strong { color: var(--ink); font-weight: 600; }
-
-  details { border-top: 1px solid var(--line); padding: 14px 0; }
-  details summary { cursor: pointer; font-size: 14px; color: var(--ink); }
-  details pre {
-    font-size: 12px; overflow-x: auto; padding: 12px; border-radius: 10px;
-    background: var(--card); border: 1px solid var(--line); color: var(--ink-2);
-  }
-
-  footer { margin: 56px 0 0; padding: 22px 0 40px; border-top: 1px solid var(--line);
-           display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: 13px; color: var(--ink-2); }
-  footer a { color: var(--ink-2); text-decoration: none; border-bottom: 1px solid var(--line); }
-  footer a:hover { color: var(--ink); border-color: var(--ink-2); }
-  .spacer { margin-left: auto; }
-  a { color: var(--accent); }
 </style>
 </head>
 <body>
-<div class="wrap">
+<div class="ambient" aria-hidden="true"></div>
 
-  <header>
-    <span class="dot" aria-hidden="true"></span>
-    <span class="brand">Hitouch</span>
-    <span class="ver">v0.2.0 · Windows x64</span>
+<div class="page">
+  <header class="bar">
+    <span class="bar-mark" aria-hidden="true"></span>
+    <span class="bar-name">Hitouch</span>
+    <span class="bar-r">v0.2.0 · Windows x64</span>
   </header>
 
-  <div class="hero">
-    <h1>一个安静的<br />DeepSeek 桌面客户端</h1>
-    <p class="lead">
-      填入<b>自己的 API Key</b> 就能对话，不注册、不登录。<br />
-      你的消息直接发往 DeepSeek，回答直接回到窗口里 —— 中间没有账号，没有同步，没有一层转发。
-    </p>
+  <section class="hero">
+    <h1>一个安静的<br>DeepSeek 桌面客户端<span>。</span></h1>
+    <p class="lede">填自己的 API Key 就能对话。不注册、不登录，聊天记录默认只存在你这台电脑上，中间没有我的服务器。</p>
 
     <div class="actions">
-      <a class="btn btn-primary"
-         href="https://gitee.com/sunkuforgame/Hitouch/releases/download/v0.2.0/Hitouch-0.2.0-setup.exe">
-        下载安装包 <small>81.7 MB · 安装到本机</small>
-      </a>
-      <a class="btn btn-ghost"
-         href="https://gitee.com/sunkuforgame/Hitouch/releases/download/v0.2.0/Hitouch-0.2.0-portable.exe">
-        下载便携版 <small>74.3 MB · 免安装</small>
-      </a>
+      <a class="btn btn-solid" href="https://gitee.com/sunkuforgame/Hitouch/releases/download/v0.2.0/Hitouch-0.2.0-setup.exe">下载安装包<span class="mb">81.7 MB</span></a>
+      <a class="btn" href="https://gitee.com/sunkuforgame/Hitouch/releases/download/v0.2.0/Hitouch-0.2.0-portable.exe">免安装便携版<span class="mb">74.3 MB</span></a>
     </div>
-    <p class="meta">Windows 10 / 11 · 64 位 · 两个版本功能完全相同</p>
+    <p class="fineprint">Windows 10 / 11 · 64 位 · 两个版本功能完全一样，安装包会请求管理员权限</p>
+  </section>
 
-    <figure class="shot">
-      <img src="img/home.png" alt="Hitouch 主界面" loading="lazy" />
-    </figure>
-  </div>
+  <figure class="shot">
+    <img src="img/home.png" alt="Hitouch 的界面：顶上一条极细的栏，中间是对话，底部一个输入框" width="1280" height="800" loading="lazy">
+    <figcaption>这就是打开后的全部界面</figcaption>
+  </figure>
 
   <section>
-    <h2>它是什么</h2>
-    <div class="cards">
-      <div class="card">
-        <h3>🔑 你自己的 Key</h3>
-        <p>Key 只存在本机，不上传服务器。不用注册账号，也没有“登录”这一步。</p>
-      </div>
-      <div class="card">
-        <h3>🔒 对话留在本机</h3>
-        <p>会话、人设、记忆都是本地文件，用 Windows DPAPI 加密；不需要时可以直接清空。</p>
-      </div>
-      <div class="card">
-        <h3>🚫 不打扰</h3>
-        <p>没有遥测，没有后台常驻联网，也没有弹窗。打开就是一张干净的对话窗。</p>
-      </div>
-    </div>
+    <h2>先说清楚</h2>
+    <dl class="rows">
+      <div class="row"><dt>这是什么</dt><dd>一个 Windows 桌面聊天客户端，只连 DeepSeek。<b>不是套壳网页</b>，也没有自己的中转服务器。</dd></div>
+      <div class="row"><dt>Key 存在哪</dt><dd>存在本机，用 Windows 自带的 DPAPI 加密。我没有服务器，也没有地方收它。</dd></div>
+      <div class="row"><dt>聊天记录</dt><dd>默认关闭。打开后写进 <code>%APPDATA%\Hitouch</code>，同样加密，随时能整个删掉。</dd></div>
+      <div class="row"><dt>会偷偷联网吗</dt><dd>只在你发消息时连 DeepSeek，以及你手动开启搜索时。没有遥测，没有后台心跳。</dd></div>
+      <div class="row"><dt>要花钱吗</dt><dd>软件免费。模型用的是你自己的 Key，费用直接付给 DeepSeek，不经过我。</dd></div>
+    </dl>
   </section>
 
   <section>
     <h2>能做什么</h2>
-    <p>
-      流式回答、随时停止与重新生成；内置通用助手、学习助教、编程搭子、翻译四套人设，也能自己写；
-      可选联网搜索（默认关，回答里会标来源）；可选本地记忆（默认关）；Markdown 表格与代码高亮；
-      任意对话一键导出成 Markdown 文件。
-    </p>
+    <p class="prose">流式回答，随时停下、重新生成。内置通用助手、学习助教、编程搭子、翻译四套人设，也能自己写。可选联网搜索（默认关，回答里标来源）、可选本地记忆（默认关）。Markdown 表格和代码高亮，任意对话能一键导出成 Markdown 文件。</p>
+    <p class="prose">没有的：账号、云同步、插件市场、会员、每日额度。</p>
   </section>
 
   <section>
     <h2>第一次打开</h2>
-    <p>
-      这个版本还<b>没有代码签名</b>，所以 Windows 可能提示“Windows 已保护你的电脑 / 未知发布者”。
-      点<b>更多信息 → 仍要运行</b>即可；安装包在安装时也会请求管理员权限，用于写入程序目录。
-    </p>
+    <div class="note">
+      <p>这个版本<span class="k">没有代码签名</span>——个人开发者买一张 Windows 代码签名证书要一千多一年，我暂时没有。所以 Windows 会弹“已保护你的电脑 / 未知发布者”，点<span class="k">更多信息 → 仍要运行</span>就可以了。安装包本身会请求管理员权限，用来写进 Program Files。</p>
+      <p>如果你不想相信这句话：下面有哈希，也可以自己把源码编译一遍，比一比大小。</p>
+    </div>
   </section>
 
   <section>
     <h2>校验下载</h2>
     <details>
-      <summary>SHA-256（点开对照）</summary>
-      <pre>ff9ab1712a48addb5967b499c865f73a8f7c156d33687f64c923ff13c2739967  Hitouch-0.2.0-setup.exe
-9bfd7c47e27735337c349b9a8326196f07f57f37f4e8b13aa4e7b631bcd6c30a  Hitouch-0.2.0-portable.exe</pre>
-      <p style="font-size:13px">在文件所在目录执行 <code>certutil -hashfile Hitouch-0.2.0-setup.exe SHA256</code> 对比，一致即未被篡改。</p>
+      <summary>两个文件的 SHA-256</summary>
+      <div class="body">
+        <p class="hash" style="font-size:13px">Hitouch-0.2.0-setup.exe · 81,724,481 字节<br><code>ff9ab1712a48addb5967b499c865f73a8f7c156d33687f64c923ff13c2739967</code></p>
+        <p class="hash" style="font-size:13px;margin-top:10px">Hitouch-0.2.0-portable.exe · 74,346,401 字节<br><code>9bfd7c47e27735337c349b9a8326196f07f57f37f4e8b13aa4e7b631bcd6c30a</code></p>
+        <p style="margin-top:12px;font-size:13px;color:var(--ink-3)">自己算一遍：</p>
+        <pre>certutil -hashfile Hitouch-0.2.0-setup.exe SHA256</pre>
+      </div>
     </details>
     <details>
-      <summary>系统要求</summary>
-      <p style="font-size:13px">Windows 10 1809 及以上 / Windows 11，64 位。安装包约 82 MB（含 Electron 运行时），属于正常体积。</p>
+      <summary>不想信安装包？自己编译</summary>
+      <div class="body">
+        <pre>git clone https://gitee.com/sunkuforgame/Hitouch.git
+cd Hitouch &amp;&amp; npm install
+npm run dist</pre>
+        <p style="font-size:13px;color:var(--ink-3)">产物在 <code>dist/</code>。包里的文件就是你在这份源码里能读到的全部内容。</p>
+      </div>
     </details>
+  </section>
+
+  <section class="author">
+    <h2>关于我</h2>
+    <p>Hitouch 是我（<b>Sun2530</b>）一个人写的，业余时间做，没有公司也没有团队。它不是产品，更像我自己每天要用的一个工具，顺手放出来。</p>
+    <p>所以它会有 bug，会有一阵子不更新，也可能哪天我不用了。有问题请直接开 issue，我会回。<a href="https://gitee.com/sunkuforgame/Hitouch/issues">Gitee issue</a> 或 <a href="https://github.com/Sun2530/Hitouch/issues">GitHub issue</a> 都行。</p>
   </section>
 
   <footer>
     <a href="https://gitee.com/sunkuforgame/Hitouch">Gitee 仓库</a>
-    <a href="https://gitee.com/sunkuforgame/Hitouch/releases/tag/v0.2.0">全部版本</a>
+    <a href="https://gitee.com/sunkuforgame/Hitouch/releases">全部版本</a>
     <a href="https://gitee.com/sunkuforgame/Hitouch/releases/download/v0.2.0/SHA256SUMS.txt">校验文件</a>
-    <span class="spacer">MIT · by Sun2530</span>
+    <span>2026-11-04 更新</span>
+    <span>MIT · Sun2530</span>
   </footer>
 </div>
 </body>
