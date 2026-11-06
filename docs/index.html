@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Hitouch — 一个安静的 DeepSeek 桌面客户端</title>
-<meta name="description" content="Hitouch 是个人开发者做的 Windows 桌面客户端：填自己的 DeepSeek API Key 就能对话，不注册、不登录，聊天记录默认只存在本机。">
+<meta name="description" content="Hitouch 是个人开发者做的 Windows 桌面客户端：填自己的 DeepSeek API Key 就能对话，不注册、不登录，聊天记录默认不保存（开启后加密存在本机）。">
 <style>
   :root{
     --bg:#FFFFFF; --ink:#101012; --ink-2:#5E5F63; --ink-3:#9A9B9F; --ink-4:#C3C4C8;
@@ -136,13 +136,14 @@
 
   <section class="hero">
     <h1>一个安静的<br>DeepSeek 桌面客户端<span>。</span></h1>
-    <p class="lede">填自己的 API Key 就能对话。不注册、不登录，聊天记录默认只存在你这台电脑上，中间没有我的服务器。</p>
+    <p class="lede">填自己的 API Key 就能对话。不注册、不登录，中间没有我的服务器——<b>聊天记录默认不保存</b>，关窗即清；想留再打开，用 Windows 自带的加密存在本机。</p>
 
     <div class="actions">
       <a class="btn btn-solid" href="https://gitee.com/sunkuforgame/Hitouch/releases/download/v0.2.0/Hitouch-0.2.0-setup.exe">下载安装包<span class="mb">81.7 MB</span></a>
       <a class="btn" href="https://gitee.com/sunkuforgame/Hitouch/releases/download/v0.2.0/Hitouch-0.2.0-portable.exe">免安装便携版<span class="mb">74.3 MB</span></a>
     </div>
     <p class="fineprint">Windows 10 / 11 · 64 位 · 两个版本功能完全一样，安装包会请求管理员权限</p>
+    <p class="fineprint">你发出去的每句话都会交给 DeepSeek 处理；开联网搜索时，搜索词会交给搜索引擎。这两件我替代不了。</p>
   </section>
 
   <figure class="shot">
@@ -155,8 +156,8 @@
     <dl class="rows">
       <div class="row"><dt>这是什么</dt><dd>一个 Windows 桌面聊天客户端，只连 DeepSeek。<b>不是套壳网页</b>，也没有自己的中转服务器。</dd></div>
       <div class="row"><dt>Key 存在哪</dt><dd>存在本机，用 Windows 自带的 DPAPI 加密。我没有服务器，也没有地方收它。</dd></div>
-      <div class="row"><dt>聊天记录</dt><dd>默认关闭。打开后写进 <code>%APPDATA%\Hitouch</code>，同样加密，随时能整个删掉。</dd></div>
-      <div class="row"><dt>会偷偷联网吗</dt><dd>只在你发消息时连 DeepSeek，以及你手动开启搜索时。没有遥测，没有后台心跳。</dd></div>
+      <div class="row"><dt>聊天记录</dt><dd><b>默认不保存</b>，关窗就没了。想留的话在设置里打开「保存对话记录」，之后才写进 <code>%APPDATA%\Hitouch</code>，用 Windows DPAPI 加密，随时能整个删掉。</dd></div>
+      <div class="row"><dt>会偷偷联网吗</dt><dd>只在你发消息时连 DeepSeek（对话内容要交给它处理），以及你手动开搜索时（搜索词要交给搜索引擎）。没有遥测，没有后台心跳。</dd></div>
       <div class="row"><dt>要花钱吗</dt><dd>软件免费。模型用的是你自己的 Key，费用直接付给 DeepSeek，不经过我。</dd></div>
     </dl>
   </section>

@@ -4,7 +4,9 @@
 
 A quiet desktop client for talking to DeepSeek.
 
-**DeepSeek desktop client for Windows x64** — bring your own API key and start chatting: no sign-up, no account, no telemetry, chats can stay on your machine. A no-install portable build is included.
+**DeepSeek desktop client for Windows x64** — bring your own API key and start chatting: no sign-up, no account, no telemetry. **Chats are not saved by default** — close the window and they're gone. Turn on "Save conversations" and they're encrypted on your machine with Windows DPAPI. A no-install portable build is included.
+
+> Where your data goes: every message you send is processed by DeepSeek. If you turn on web search, your search queries go to the search engine. Nothing else leaves the machine.
 
 <sub>Windows x64 · 0.2.0 · MIT</sub>
 
