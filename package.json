@@ -1,4 +1,4 @@
-{
+﻿{
   "name": "hitouch",
   "productName": "Hitouch",
   "version": "0.2.1",
@@ -18,7 +18,7 @@
   "build": {
     "appId": "dev.hitouch.app",
     "productName": "Hitouch",
-    "copyright": "Copyright © 2026 Sun2530",
+    "copyright": "Copyright 漏 2026 Sun2530",
     "directories": {
       "output": "dist",
       "buildResources": "build"
@@ -72,3 +72,4 @@
     }
   }
 }
+
