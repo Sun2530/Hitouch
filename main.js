@@ -63,7 +63,8 @@ const cfg = {
   historyEnabled: false,               // 本地保存对话：默认关，用户自己开
   webSearch: false,                    // 联网搜索：默认关，开了模型才会去搜
   memoryEnabled: false,                // 本地记忆：默认关，开了模型才能记东西
-  contextLimit: 30,                    // 每次带给模型的消息条数上限
+  contextLimit: 40,                    // 每次带给模型的消息条数上限
+  theme: 'light',                      // light | pro（程序员外观：蓝黑 + 全英文）
   window: null,                        // 上次的窗口位置与大小
 };
 
@@ -123,7 +124,10 @@ function loadCfg() {
     cfg.webSearch = raw.webSearch === true;
     cfg.memoryEnabled = raw.memoryEnabled === true;
     const limit = Number(raw.contextLimit);
-    cfg.contextLimit = Number.isFinite(limit) ? Math.min(60, Math.max(6, Math.round(limit))) : 30;
+    cfg.contextLimit = Number.isFinite(limit) ? Math.min(200, Math.max(6, Math.round(limit))) : 40;
+    // 旧版本下限是 6，老配置里落成 6 的人其实是被默认值坑了，这里一次性抬到 40
+    if (cfg.contextLimit === 6) cfg.contextLimit = 40;
+    cfg.theme = raw.theme === 'pro' ? 'pro' : 'light';
     if (raw.window && typeof raw.window === 'object') {
       const w = raw.window;
       cfg.window = {
@@ -153,6 +157,7 @@ function saveCfg() {
     webSearch: cfg.webSearch,
     memoryEnabled: cfg.memoryEnabled,
     contextLimit: cfg.contextLimit,
+    theme: cfg.theme,
     window: cfg.window,
   };
   try {
@@ -872,6 +877,7 @@ function publicConfig() {
     repo: GITHUB_REPO,
     personaId: cfg.personaId,
     personas: allPersonas(),
+    theme: cfg.theme,
     search: { enabled: cfg.webSearch },
     memory: { enabled: cfg.memoryEnabled },
     history: {
@@ -1057,7 +1063,8 @@ ipcMain.handle('settings:set', (_e, patch) => {
     if (typeof patch.webSearch === 'boolean') cfg.webSearch = patch.webSearch;
     if (typeof patch.memoryEnabled === 'boolean') cfg.memoryEnabled = patch.memoryEnabled;
     const n = Number(patch.contextLimit);
-    if (Number.isFinite(n)) cfg.contextLimit = Math.min(60, Math.max(6, Math.round(n)));
+    if (Number.isFinite(n)) cfg.contextLimit = Math.min(200, Math.max(6, Math.round(n)));
+    if (patch.theme === 'pro' || patch.theme === 'light') cfg.theme = patch.theme;
     saveCfg();
   }
   return publicConfig();

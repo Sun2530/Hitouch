@@ -80,6 +80,44 @@ function scrollBottom(smooth) {
   });
 }
 
+/* ---------- 推理侧栏：程序员外观下，右侧滚动打印 reasoning_content ---------- */
+let thinkBuf = '';
+let thinkT0 = 0;
+let thinkClosed = false;
+
+function isProTheme() {
+  return document.documentElement.dataset.theme === 'pro';
+}
+
+function thinkReset() {
+  thinkBuf = '';
+  thinkT0 = 0;
+  thinkClosed = false;
+  const body = $('#thinkBody');
+  const meta = $('#thinkMeta');
+  const app = $('#app');
+  if (body) body.textContent = '';
+  if (meta) meta.textContent = '';
+  if (app) app.classList.remove('think-on');
+}
+
+function thinkPush(delta) {
+  if (!isProTheme() || thinkClosed) return;
+  const app = $('#app');
+  const body = $('#thinkBody');
+  const meta = $('#thinkMeta');
+  if (!body || !app) return;
+  if (!thinkT0) thinkT0 = Date.now();
+  thinkBuf += delta;
+  app.classList.add('think-on');
+  body.textContent = thinkBuf;
+  if (meta) {
+    const secs = Math.max(1, Math.round((Date.now() - thinkT0) / 1000));
+    meta.textContent = `${thinkBuf.length} chars · ${secs}s`;
+  }
+  requestAnimationFrame(() => { body.scrollTop = body.scrollHeight; });
+}
+
 function addMsg(kind, text) {
   const node = document.createElement('div');
   node.className = `msg is-${kind}`;
@@ -159,15 +197,19 @@ function renderModels() {
 }
 
 function renderStatus() {
-  /* 设置面板主视图右侧的小字 */
+  /* 顶栏 ⓘ 菜单里的状态小字（设置入口已移到输入框齿轮，这里可能不存在） */
   const tag = $('#provTag');
-  tag.textContent = CONFIG.hasKey ? '已接入' : '未接入';
-  tag.classList.toggle('is-on', CONFIG.hasKey);
+  if (tag) {
+    tag.textContent = CONFIG.hasKey ? '已接入' : '未接入';
+    tag.classList.toggle('is-on', CONFIG.hasKey);
+  }
 
-  /* 接入页的供应商状态 */
+  /* 设置里「供应商」那行的状态 */
   const st = $('#dsState');
-  st.innerHTML = `<i></i>${CONFIG.hasKey ? '已接入' : '未接入'}`;
-  st.classList.toggle('is-on', CONFIG.hasKey);
+  if (st) {
+    st.innerHTML = `<i></i>${CONFIG.hasKey ? '已接入' : '未接入'}`;
+    st.classList.toggle('is-on', CONFIG.hasKey);
+  }
 
   /* 深度思考：主页滑轨 + 弹窗开关，都只反映已保存的值 */
   renderDial();
@@ -251,13 +293,11 @@ async function loadConfig() {
 }
 
 /* ---------------- 弹层 ---------------- */
-const pop = $('#pop');
 const setBtn = $('#setBtn');
 const popAbout = $('#popAbout');
 const aboutBtn = $('#aboutBtn');
 
 const PANELS = [
-  { el: pop, btn: setBtn },
   { el: popAbout, btn: aboutBtn },
 ];
 
@@ -378,10 +418,21 @@ function openKey() {
   renderStatus();
   renderThinkSwitch();
 
+  /* 四组折叠：默认全收，没接入时自动展开「模型」 */
+  keyModal.querySelectorAll('.acc').forEach((s) => s.classList.remove('is-open'));
+  if (!CONFIG.hasKey) {
+    const sec = keyModal.querySelector('.acc[data-acc="model"]');
+    if (sec) sec.classList.add('is-open');
+  }
+
   closeAll();
   keyModal.classList.add('is-open');
   keyModal.setAttribute('aria-hidden', 'false');
-  setTimeout(() => $('#keyInput').focus(), 170);
+  if (window.HitouchI18n) window.HitouchI18n.apply(isProTheme() ? 'en' : 'zh');
+  setTimeout(() => {
+    const k = $('#keyInput');
+    if (k && k.offsetParent) k.focus();
+  }, 180);
 }
 
 function closeKey() {
@@ -690,6 +741,8 @@ async function streamTurn() {
   let started = false;
   let thinking = false;
 
+  thinkReset();
+
   const push = (s) => {
     if (!s) return;
     if (!started) {
@@ -702,7 +755,8 @@ async function streamTurn() {
     scrollBottom(false);
   };
 
-  const offR = api.onReasoning(() => {
+  const offR = api.onReasoning(({ delta }) => {
+    if (typeof delta === 'string') thinkPush(delta);
     if (started || thinking) return;
     thinking = true;
     body.innerHTML = '<span class="thinking">正在思考</span>';
@@ -1011,7 +1065,7 @@ function bind() {
   });
 
   /* 两枚入口按钮 */
-  setBtn.addEventListener('click', (e) => { e.stopPropagation(); togglePanel(pop, setBtn); });
+  setBtn.addEventListener('click', (e) => { e.stopPropagation(); openKey(); });
   aboutBtn.addEventListener('click', (e) => { e.stopPropagation(); togglePanel(popAbout, aboutBtn); });
 
   /* 弹层内：进入二级页 / 返回 */
@@ -1031,6 +1085,41 @@ function bind() {
   /* 居中弹窗：关闭方式只有两种，右上角 ✕ 与点遮罩 */
   $('#keyClose').addEventListener('click', closeKey);
   keyModal.querySelector('[data-mclose]').addEventListener('click', closeKey);
+
+  /* 设置：四组折叠，一次只开一组 */
+  keyModal.querySelectorAll('.acc-h').forEach((h) => {
+    h.addEventListener('click', () => {
+      const sec = h.closest('.acc');
+      const wasOpen = sec.classList.contains('is-open');
+      keyModal.querySelectorAll('.acc').forEach((s) => s.classList.remove('is-open'));
+      if (!wasOpen) sec.classList.add('is-open');
+    });
+  });
+
+  /* 作者区的两个链接 */
+  const repoBtn = $('#aboutRepo');
+  if (repoBtn) repoBtn.addEventListener('click', () => api.openRepo());
+  const siteBtn = $('#aboutSite');
+  if (siteBtn) siteBtn.addEventListener('click', () => api.openExternal('https://sun2530.github.io/hitouch-site/'));
+
+  /* 外观切换：浅色 / 程序员（蓝黑 + 全英文） */
+  const themeSeg = $('#themeSeg');
+  if (themeSeg) {
+    themeSeg.addEventListener('click', (e) => {
+      const b = e.target.closest('[data-theme-pick]');
+      if (b) pickTheme(b.dataset.themePick);
+    });
+  }
+
+  /* 右侧推理栏：收起 */
+  const thinkClose = $('#thinkClose');
+  if (thinkClose) {
+    thinkClose.addEventListener('click', () => {
+      thinkClosed = true;
+      const app = $('#app');
+      if (app) app.classList.remove('think-on');
+    });
+  }
 
   /* 深度思考滑块：左关、右开 */
   $('#thinkSw').addEventListener('click', () => {
@@ -1222,7 +1311,7 @@ function toast(text) {
     el.className = 'toast';
     document.body.appendChild(el);
   }
-  el.textContent = text;
+  el.textContent = window.HitouchI18n ? window.HitouchI18n.t(text) : text;
   el.classList.add('is-on');
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => el.classList.remove('is-on'), 2000);
@@ -1455,7 +1544,8 @@ function renderPersonas() {
 
 function syncPersonaChip() {
   const p = (CONFIG.personas || []).find((x) => x.id === CONFIG.personaId);
-  personaNameEl.textContent = p ? p.name : '通用助手';
+  const raw = p ? p.name : '通用助手';
+  personaNameEl.textContent = window.HitouchI18n ? window.HitouchI18n.t(raw) : raw;
 }
 
 function openPersonas() {
@@ -1545,20 +1635,54 @@ const memText = $('#memText');
 const memMsg = $('#memMsg');
 
 function setToggle(btn, tag, on) {
-  tag.textContent = on ? '开' : '关';
-  btn.classList.toggle('is-on', on);
-  btn.setAttribute('aria-checked', on ? 'true' : 'false');
+  if (tag) tag.textContent = on ? '开' : '关';
+  if (btn) {
+    btn.classList.toggle('is-on', on);
+    btn.setAttribute('aria-checked', on ? 'true' : 'false');
+  }
 }
 
 function applySettings() {
   const h = CONFIG.history || {};
-  const lim = Math.min(60, Math.max(6, Number(h.contextLimit) || 30));
+  const lim = Math.min(200, Math.max(6, Number(h.contextLimit) || 40));
   ctxRange.value = String(lim);
   ctxVal.textContent = String(lim);
   setToggle(saveToggle, saveState, !!h.enabled);
   setToggle(searchToggle, searchState, !!(CONFIG.search || {}).enabled);
   setToggle(memoryToggle, memoryState, !!(CONFIG.memory || {}).enabled);
+  applyTheme(CONFIG.theme === 'pro' ? 'pro' : 'light');
   updateStoreState();
+}
+
+/* ---- 外观：light / pro（蓝黑 + 全英文 + 右侧推理栏） ---- */
+function applyTheme(theme) {
+  const pro = theme === 'pro';
+  document.documentElement.dataset.theme = pro ? 'pro' : 'light';
+  if (window.HitouchI18n) window.HitouchI18n.apply(pro ? 'en' : 'zh');
+  const seg = $('#themeSeg');
+  if (seg) {
+    seg.querySelectorAll('.seg-b').forEach((b) => {
+      b.classList.toggle('is-on', b.dataset.themePick === (pro ? 'pro' : 'light'));
+    });
+  }
+  const desc = $('#aboutDesc');
+  if (desc) {
+    desc.textContent = pro
+      ? 'A quiet client built by one person: no sign-up, no login, no telemetry — chats stay on this machine by default. Most of the code was written by me together with an AI; the source is public, so you can build it yourself and compare.'
+      : '一个人做的安静客户端：不注册、不登录、没有遥测，对话默认只留在这一台电脑上。代码大部分是我和 AI 一起写的，源码公开，可以自己编一遍再比对。';
+  }
+  if (!pro) {
+    const app = $('#app');
+    if (app) app.classList.remove('think-on');
+  }
+}
+
+async function pickTheme(theme) {
+  if (theme === (CONFIG.theme || 'light')) return;
+  applyTheme(theme);
+  let cfg;
+  try { cfg = await api.saveSettings({ theme }); } catch (_) { return; }
+  if (cfg) CONFIG = cfg;
 }
 
 async function flipSetting(patch) {
