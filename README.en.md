@@ -34,7 +34,7 @@ Everything on screen is necessary; the rest was removed. Concretely:
 - **No cloud sync.** Records stay inside the current Windows account.
 - **No settings maze.** Every option lives in a single panel, readable in one glance.
 - **No shortcut reference.** Enter sends, Shift + Enter breaks the line. That's all.
-- **No themes, skins, or plugin marketplace.** White is white.
+- **No skins or plugin marketplace.** Just two looks: Light, and Engineer (dark blue, full English, live reasoning panel on the right).
 
 The icons were drawn one by one rather than pulled from an icon set.
 
@@ -78,6 +78,8 @@ DeepSeek-V4.1-Flash and DeepSeek-V4-Pro, switchable at any time.
 **Skills**
 Two are built in, each can be turned off independently:
 
+- **Engineer look** (0.3.0) — full English UI + dark blue theme with a right-hand panel that streams the model's reasoning live; switch between the two looks anytime, your choice is remembered.
+- **Context slider** (0.3.0) — adjustable from 6 to 200 turns, default 40; long conversations and big projects no longer get cut off.
 - **Alarm** — say "remind me at eight tomorrow" and the model turns it into a scheduled task that pops up a notification on time.
 - **System repair** — runs Windows' own DISM and SFC to verify and repair local system files. Requests elevation when needed, and writes a separate log file for every run.
 
@@ -90,14 +92,14 @@ Two builds, identical in function. Pick either.
 
 | File | Notes |
 | --- | --- |
-| `Hitouch-0.2.0-portable.exe` | Portable. Double-click to run, writes nothing to the registry, fits on a USB stick. |
-| `Hitouch-0.2.0-setup.exe` | Installer. Choose the install directory, creates Start menu and desktop shortcuts, uninstalls from Apps & features. |
+| `Hitouch-0.3.0-portable.exe` | Portable. Double-click to run, writes nothing to the registry, fits on a USB stick. |
+| `Hitouch-0.3.0-setup.exe` | Installer. Choose the install directory, creates Start menu and desktop shortcuts, uninstalls from Apps & features. |
 
 Get them from [Releases](https://github.com/Sun2530/Hitouch/releases). The size is large because the Electron runtime is bundled.
 
 ## First run
 
-1. Open the app and click the top-right corner to reach **Model & access**
+1. Open the app and click the gear left of the composer to reach **Settings → Model**
 2. Enter a DeepSeek API key (create one at [platform.deepseek.com](https://platform.deepseek.com/api_keys))
 3. Pick a model, save
 

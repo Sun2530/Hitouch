@@ -12,7 +12,7 @@
 
 <br />
 
-[![release](https://img.shields.io/badge/release-v0.2.0-blue)](https://gitee.com/sunkuforgame/Hitouch/releases/v0.2.0)
+[![release](https://img.shields.io/badge/release-v0.3.0-blue)](https://gitee.com/sunkuforgame/Hitouch/releases/v0.3.0)
 [![license](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![stars](https://gitee.com/sunkuforgame/Hitouch/badge/star.svg)](https://gitee.com/sunkuforgame/Hitouch/stargazers)
 [![forks](https://gitee.com/sunkuforgame/Hitouch/badge/fork.svg)](https://gitee.com/sunkuforgame/Hitouch/members)
@@ -47,6 +47,8 @@ Hitouch 是跑在本机的 DeepSeek 对话客户端。它不提供模型，也�
 - 📤 **导出** —— 任意一段对话，一键存成 Markdown
 - 🧠 **推理开关** —— 输入框右下角的滑轨控制模型是否先思考再回答：关掉更快，打开更稳
 - 🔀 **双模型切换** —— DeepSeek-V4.1-Flash 与 DeepSeek-V4-Pro，随时切换
+- 🎛 **程序员外观**（0.3.0）—— 全英文界面 + 蓝黑配色，右侧边栏实时记录模型的深度思考过程；与浅色外观一键切换，选择会记住
+- 🎚 **上下文滑轨**（0.3.0）—— 6–200 轮可调，默认 40；长对话、大项目不再被截断
 - ⏰ **闹钟提醒** —— 直接说「明天八点提醒我」，模型自动转成定时任务，到点弹窗
 - 🛠️ **系统修复** —— 调用 Windows 自带的 DISM 与 SFC 校验并修复本机系统文件，每次执行日志单独成档
 - 📜 **使用条款** —— 首次启动需阅读并同意使用条款与未成年人保护条款，版本号与同意时间仅记录在本机
@@ -57,9 +59,9 @@ Hitouch 是跑在本机的 DeepSeek 对话客户端。它不提供模型，也�
 
 - 🚫 **没有常驻侧边栏** —— 对话收在左上角，需要时再拉开
 - ☁️ **没有云同步** —— 记录只留在当前 Windows 账户里
-- 🧩 **没有设置迷宫** —— 全部选项在同一个面板里，一眼看完
+- 🧩 **没有设置迷宫** —— 全部选项收在一个设置面板里，四组折叠，一次只开一组
 - ⌨️ **没有快捷键表** —— 回车发送，Shift + 回车换行，到此为止
-- 🎭 **没有主题、皮肤、插件市场** —— 白底就是白底
+- 🎭 **没有皮肤、插件市场** —— 外观只有两套：浅色与程序员（蓝黑 + 全英文），够用就好
 - ✏️ **图标逐像素手绘**，没有取用任何图标库
 
 <details>
@@ -82,14 +84,14 @@ Hitouch 是跑在本机的 DeepSeek 对话客户端。它不提供模型，也�
 
 | 文件 | 说明 |
 | --- | --- |
-| `Hitouch-0.2.0-portable.exe` | 👜 **便携版**。双击即用，不写注册表，可以放进 U 盘带走 |
-| `Hitouch-0.2.0-setup.exe` | 💿 **安装包**。可选安装目录，创建开始菜单与桌面快捷方式，可从「应用和功能」卸载 |
+| `Hitouch-0.3.0-portable.exe` | 👜 **便携版**。双击即用，不写注册表，可以放进 U 盘带走 |
+| `Hitouch-0.3.0-setup.exe` | 💿 **安装包**。可选安装目录，创建开始菜单与桌面快捷方式，可从「应用和功能」卸载 |
 
 > 📌 体积偏大是因为打包了 Electron 运行时，属正常现象。
 
 ## 🚀 快速上手
 
-1. 打开后点右上角，进入 **模型与接入**
+1. 点输入框左边的齿轮，进 **设置 → 模型**
 2. 填入 DeepSeek API Key（在 [platform.deepseek.com](https://platform.deepseek.com/api_keys) 申请）
 3. 选模型，保存 ✅
 
