@@ -294,12 +294,8 @@ async function loadConfig() {
 
 /* ---------------- 弹层 ---------------- */
 const setBtn = $('#setBtn');
-const popAbout = $('#popAbout');
-const aboutBtn = $('#aboutBtn');
 
-const PANELS = [
-  { el: popAbout, btn: aboutBtn },
-];
+const PANELS = [];
 
 function closeAll() {
   PANELS.forEach(({ el, btn }) => {
@@ -1066,7 +1062,28 @@ function bind() {
 
   /* 两枚入口按钮 */
   setBtn.addEventListener('click', (e) => { e.stopPropagation(); openKey(); });
-  aboutBtn.addEventListener('click', (e) => { e.stopPropagation(); togglePanel(popAbout, aboutBtn); });
+
+  /* 技能 / 隐私声明：从设置里打开 */
+  const openInfo = (id) => {
+    const m = $('#' + id);
+    if (!m) return;
+    m.classList.add('is-open');
+    m.setAttribute('aria-hidden', 'false');
+    if (id === 'skillsModal') renderSkills();
+  };
+  const closeInfo = () => {
+    ['skillsModal', 'privacyModal'].forEach((id) => {
+      const m = $('#' + id);
+      if (!m) return;
+      m.classList.remove('is-open');
+      m.setAttribute('aria-hidden', 'true');
+    });
+  };
+  const openSkillsBtn = $('#openSkills');
+  if (openSkillsBtn) openSkillsBtn.addEventListener('click', () => openInfo('skillsModal'));
+  const openPrivacyBtn = $('#openPrivacy');
+  if (openPrivacyBtn) openPrivacyBtn.addEventListener('click', () => openInfo('privacyModal'));
+  document.querySelectorAll('[data-infoclose]').forEach((n) => n.addEventListener('click', closeInfo));
 
   /* 弹层内：进入二级页 / 返回 */
   PANELS.forEach(({ el }) => {
@@ -1187,7 +1204,8 @@ function bind() {
   $('#ctDecline').addEventListener('click', declineConsent);
 
   /* GitHub 仓库：交给系统浏览器 */
-  $('#repoBtn').addEventListener('click', (e) => {
+  const repoBtnOld = $('#repoBtn');
+  if (repoBtnOld) repoBtnOld.addEventListener('click', (e) => {
     e.stopPropagation();
     closeAll();
     if (api && api.openRepo) api.openRepo();

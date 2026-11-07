@@ -1,7 +1,7 @@
 {
   "name": "hitouch",
   "productName": "Hitouch",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "A quiet desktop client for DeepSeek",
   "main": "main.js",
   "author": "Sun2530",
