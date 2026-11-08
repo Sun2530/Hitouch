@@ -12,7 +12,7 @@
 
 <br />
 
-[![release](https://img.shields.io/badge/release-v0.3.1-blue)](https://gitee.com/sunkuforgame/Hitouch/releases/v0.3.1)
+[![release](https://img.shields.io/badge/release-v0.3.2-blue)](https://gitee.com/sunkuforgame/Hitouch/releases/v0.3.2)
 [![license](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![stars](https://gitee.com/sunkuforgame/Hitouch/badge/star.svg)](https://gitee.com/sunkuforgame/Hitouch/stargazers)
 [![forks](https://gitee.com/sunkuforgame/Hitouch/badge/fork.svg)](https://gitee.com/sunkuforgame/Hitouch/members)
@@ -84,8 +84,8 @@ Hitouch 是跑在本机的 DeepSeek 对话客户端。它不提供模型，也�
 
 | 文件 | 说明 |
 | --- | --- |
-| `Hitouch-0.3.1-portable.exe` | 👜 **便携版**。双击即用，不写注册表，可以放进 U 盘带走 |
-| `Hitouch-0.3.1-setup.exe` | 💿 **安装包**。可选安装目录，创建开始菜单与桌面快捷方式，可从「应用和功能」卸载 |
+| `Hitouch-0.3.2-portable.exe` | 👜 **便携版**。双击即用，不写注册表，可以放进 U 盘带走 |
+| `Hitouch-0.3.2-setup.exe` | 💿 **安装包**。可选安装目录，创建开始菜单与桌面快捷方式，可从「应用和功能」卸载 |
 
 > 📌 体积偏大是因为打包了 Electron 运行时，属正常现象。
 
