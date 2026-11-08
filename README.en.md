@@ -92,8 +92,8 @@ Two builds, identical in function. Pick either.
 
 | File | Notes |
 | --- | --- |
-| `Hitouch-0.3.2-portable.exe` | Portable. Double-click to run, writes nothing to the registry, fits on a USB stick. |
-| `Hitouch-0.3.2-setup.exe` | Installer. Choose the install directory, creates Start menu and desktop shortcuts, uninstalls from Apps & features. |
+| `Hitouch-0.3.3-portable.exe` | Portable. Double-click to run, writes nothing to the registry, fits on a USB stick. |
+| `Hitouch-0.3.3-setup.exe` | Installer. Choose the install directory, creates Start menu and desktop shortcuts, uninstalls from Apps & features. |
 
 Get them from [Releases](https://github.com/Sun2530/Hitouch/releases). The size is large because the Electron runtime is bundled.
 
