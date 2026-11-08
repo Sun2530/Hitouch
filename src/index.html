@@ -144,7 +144,7 @@
             <span class="pt-dot" aria-hidden="true"></span>
             <span id="personaName">通用助手</span>
           </button>
-          <span class="foot-ver">v0.3.2</span>
+          <span class="foot-ver">v0.3.3</span>
         </div>
 
         <div class="dial" id="dial" data-on="false">
@@ -165,9 +165,9 @@
 <div class="modal" id="keyModal" aria-hidden="true">
   <div class="modal-mask" data-mclose></div>
 
-  <div class="modal-card mc-sheet" role="dialog" aria-modal="true" aria-label="设置">
+  <div class="modal-card set-shell" role="dialog" aria-modal="true" aria-label="设置">
 
-    <div class="mc-head">
+    <div class="set-head">
       <span class="mc-title">设置</span>
       <button class="mc-x" id="keyClose" title="关闭">
         <svg width="11" height="11" viewBox="0 0 12 12" aria-hidden="true">
@@ -177,19 +177,30 @@
       </button>
     </div>
 
-    <div class="mc-body">
-
-      <!-- ① 通用设置 -->
-      <section class="acc" data-acc="general">
-        <button class="acc-h" type="button">
-          <span class="acc-t">通用设置</span>
-          <svg class="acc-c" width="10" height="10" viewBox="0 0 12 12" aria-hidden="true">
-            <path d="M4 2.5L8 6l-4 3.5" stroke="currentColor" stroke-width="1.3"
-                  stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-          </svg>
+    <div class="set-main">
+      <nav class="set-nav" aria-label="设置分类">
+        <button class="set-nav-i is-on" type="button" data-pane="general">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M4 6h9M4 10h9M7 3.5v2M11 7.5v2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+          <span>通用设置</span>
         </button>
-        <div class="acc-b">
-          <div class="sw-row">
+        <button class="set-nav-i" type="button" data-pane="model">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><rect x="3.2" y="3.2" width="9.6" height="9.6" rx="2" stroke="currentColor" stroke-width="1.3"/><rect x="6.1" y="6.1" width="3.8" height="3.8" rx="1" stroke="currentColor" stroke-width="1.2"/></svg>
+          <span>模型</span>
+        </button>
+        <button class="set-nav-i" type="button" data-pane="chat">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3.2 6.4c0-1.7 1.6-3 3.6-3h2.4c2 0 3.6 1.3 3.6 3s-1.6 3-3.6 3H7.6L5 11.6V9.3c-1.1-.4-1.8-1.5-1.8-2.9Z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>
+          <span>对话设置</span>
+        </button>
+        <button class="set-nav-i" type="button" data-pane="about">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="8" cy="5.6" r="2.4" stroke="currentColor" stroke-width="1.3"/><path d="M3.4 12.4c0-2.1 2-3.4 4.6-3.4s4.6 1.3 4.6 3.4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+          <span>作者</span>
+        </button>
+      </nav>
+
+      <div class="set-panes">
+        <section class="set-pane is-on" data-pane="general">
+          <div class="set-card">
+<div class="sw-row">
             <div class="sw-txt">
               <div class="sw-name">外观</div>
               <div class="sw-desc">浅色日常用；程序员是蓝黑界面 + 全英文术语</div>
@@ -215,21 +226,11 @@
             </div>
             <button class="set-act" id="openPrivacy" type="button">查看</button>
           </div>
-        </div>
-      </section>
-
-      <!-- ② 模型 -->
-      <section class="acc" data-acc="model">
-        <button class="acc-h" type="button">
-          <span class="acc-t">模型</span>
-          <svg class="acc-c" width="10" height="10" viewBox="0 0 12 12" aria-hidden="true">
-            <path d="M4 2.5L8 6l-4 3.5" stroke="currentColor" stroke-width="1.3"
-                  stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-          </svg>
-        </button>
-        <div class="acc-b">
-
-          <div class="mc-sub">当前模型</div>
+          </div>
+        </section>
+        <section class="set-pane" data-pane="model">
+          <div class="set-card">
+<div class="mc-sub">当前模型</div>
           <div class="pop-list" id="modelList"></div>
 
           <div class="fld">
@@ -270,22 +271,11 @@
             <button class="btn-solid" id="saveBtn">保存并启用</button>
           </div>
           <div class="fld-msg" id="provMsg" aria-live="polite"></div>
-
-        </div>
-      </section>
-
-      <!-- ③ 对话设置 -->
-      <section class="acc" data-acc="chat">
-        <button class="acc-h" type="button">
-          <span class="acc-t">对话设置</span>
-          <svg class="acc-c" width="10" height="10" viewBox="0 0 12 12" aria-hidden="true">
-            <path d="M4 2.5L8 6l-4 3.5" stroke="currentColor" stroke-width="1.3"
-                  stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-          </svg>
-        </button>
-        <div class="acc-b">
-
-          <div class="sw-row">
+          </div>
+        </section>
+        <section class="set-pane" data-pane="chat">
+          <div class="set-card">
+<div class="sw-row">
             <div class="sw-txt">
               <div class="sw-name">保存对话记录</div>
               <div class="sw-desc">关：关掉窗口就没了；开：加密存在本机</div>
@@ -337,22 +327,12 @@
             <span class="pf-val"><i id="ctxVal">40</i> 轮</span>
           </div>
           <div class="hint">带动多少轮对话进上下文。数值越大越记得住，也越慢。</div>
-
-        </div>
-      </section>
-
-      <!-- ④ 作者 -->
-      <section class="acc" data-acc="about">
-        <button class="acc-h" type="button">
-          <span class="acc-t">作者</span>
-          <svg class="acc-c" width="10" height="10" viewBox="0 0 12 12" aria-hidden="true">
-            <path d="M4 2.5L8 6l-4 3.5" stroke="currentColor" stroke-width="1.3"
-                  stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-          </svg>
-        </button>
-        <div class="acc-b">
-          <div class="about-wrap">
-            <div class="about-name">Hitouch <span class="foot-ver">v0.3.2</span></div>
+          </div>
+        </section>
+        <section class="set-pane" data-pane="about">
+          <div class="set-card">
+<div class="about-wrap">
+            <div class="about-name">Hitouch <span class="foot-ver">v0.3.3</span></div>
             <p class="about-desc" id="aboutDesc">
               一个人做的安静客户端：不注册、不登录、没有遥测，对话默认只留在这一台电脑上。
               代码大部分是我和 AI 一起写的，源码公开，可以自己编一遍再比对。
@@ -360,11 +340,15 @@
             <div class="about-links">
               <button class="set-act" id="aboutRepo">源码仓库</button>
               <button class="set-act" id="aboutSite">主页</button>
+              <button class="set-act" id="aboutReleases">全部版本</button>
+            </div>
+            <div class="about-meta">
+              <span>MIT 许可证</span><i></i><span>Electron 33</span><i></i><span>Windows x64</span>
             </div>
           </div>
-        </div>
-      </section>
-
+          </div>
+        </section>
+      </div>
     </div>
 
   </div>

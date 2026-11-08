@@ -405,6 +405,27 @@ function renderThinkSwitch() {
   if (sw) sw.setAttribute('aria-checked', pendingThinking ? 'true' : 'false');
 }
 
+/* 设置弹窗：左侧分类（通用设置 / 模型 / 对话设置 / 作者） */
+function setPane(name) {
+  if (!name) return;
+  const navs = keyModal.querySelectorAll('.set-nav-i');
+  const panes = keyModal.querySelectorAll('.set-pane');
+  let hit = false;
+  panes.forEach((s) => {
+    const on = s.dataset.pane === name;
+    if (on) hit = true;
+    s.classList.toggle('is-on', on);
+  });
+  if (!hit) return;
+  navs.forEach((b) => {
+    const on = b.dataset.pane === name;
+    b.classList.toggle('is-on', on);
+    b.setAttribute('aria-current', on ? 'page' : 'false');
+  });
+  const box = keyModal.querySelector('.set-panes');
+  if (box) box.scrollTop = 0;
+}
+
 function openKey() {
   pendingModel = CONFIG.model;
   pendingThinking = CONFIG.thinking;
@@ -414,12 +435,8 @@ function openKey() {
   renderStatus();
   renderThinkSwitch();
 
-  /* 四组折叠：默认全收，没接入时自动展开「模型」 */
-  keyModal.querySelectorAll('.acc').forEach((s) => s.classList.remove('is-open'));
-  if (!CONFIG.hasKey) {
-    const sec = keyModal.querySelector('.acc[data-acc="model"]');
-    if (sec) sec.classList.add('is-open');
-  }
+  /* 左侧分类：没接入时默认停在「模型」，否则停在「通用设置」 */
+  setPane(CONFIG.hasKey ? 'general' : 'model');
 
   closeAll();
   keyModal.classList.add('is-open');
@@ -1103,14 +1120,9 @@ function bind() {
   $('#keyClose').addEventListener('click', closeKey);
   keyModal.querySelector('[data-mclose]').addEventListener('click', closeKey);
 
-  /* 设置：四组折叠，一次只开一组 */
-  keyModal.querySelectorAll('.acc-h').forEach((h) => {
-    h.addEventListener('click', () => {
-      const sec = h.closest('.acc');
-      const wasOpen = sec.classList.contains('is-open');
-      keyModal.querySelectorAll('.acc').forEach((s) => s.classList.remove('is-open'));
-      if (!wasOpen) sec.classList.add('is-open');
-    });
+  /* 设置：左侧分类切换 */
+  keyModal.querySelectorAll('.set-nav-i').forEach((b) => {
+    b.addEventListener('click', () => setPane(b.dataset.pane));
   });
 
   /* 作者区的两个链接 */
@@ -1118,6 +1130,8 @@ function bind() {
   if (repoBtn) repoBtn.addEventListener('click', () => api.openRepo());
   const siteBtn = $('#aboutSite');
   if (siteBtn) siteBtn.addEventListener('click', () => api.openExternal('https://sun2530.github.io/hitouch-site/'));
+  const relBtn = $('#aboutReleases');
+  if (relBtn) relBtn.addEventListener('click', () => api.openExternal('https://gitee.com/sunkuforgame/Hitouch/releases'));
 
   /* 外观切换：浅色 / 程序员（蓝黑 + 全英文） */
   const themeSeg = $('#themeSeg');
